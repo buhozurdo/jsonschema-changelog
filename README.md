@@ -1,329 +1,364 @@
 # jsonschema-changelog
-Generador de changelogs y sugerencias de versionado semántico (semver) a partir del diff entre dos JSON Schema.
 
-jsonschema-changelog compara dos versiones de un contrato (JSON Schema y, en un futuro, OpenAPI) y produce:
-- Un changelog legible en Markdown con los cambios detectados.
-- Una sugerencia de versión semver (patch/minor/major) basada en reglas heurísticas.
-- Un reporte estructurado en JSON para pipelines o dashboards.
+[![Build Status](https://img.shields.io/github/actions/workflow/status/raelcorrales/jsonschema-changelog/ci.yml?branch=main)](https://github.com/raelcorrales/jsonschema-changelog/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/raelcorrales/jsonschema-changelog)](https://codecov.io/gh/raelcorrales/jsonschema-changelog)
+[![PyPI version](https://img.shields.io/pypi/v/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
+[![Python versions](https://img.shields.io/pypi/pyversions/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Estado: MVP en desarrollo. Alcance actual enfocado en: properties, required y tipos primarios.
+**Detect, document, and manage changes between JSON Schema versions.**
 
----
-
-## Características
-- Diff entre dos JSON Schema:
-  - Propiedades añadidas/eliminadas.
-  - Cambios en `required`.
-  - Cambios de tipo primario (`string`, `number`, `integer`, `boolean`, `array`, `object`).
-- Sugerencia semver automática:
-  - Cambios breaking → major.
-  - Cambios adicionados compatibles → minor.
-  - Correcciones no breaking → patch.
-- Salida en Markdown y JSON.
-- CLI simple y lista para CI (opción de fallar si hay cambios breaking).
-
-Limitaciones actuales (MVP):
-- No evalúa combinadores (`oneOf`, `anyOf`, `allOf`), `not`, ni `$ref` complejos.
-- No analiza formatos (`format`), patrones (`pattern`) o rangos (`minimum`, `maxLength`, etc.).
-- No comprende semántica específica de dominio; ofrece overrides por configuración.
+Part of the [Búho Zurdo](https://github.com/raelcorrales) ecosystem 🦉
 
 ---
 
-## Requisitos
-- Python 3.9 o superior (recomendado usar pipx para instalación aislada).
+## 🎯 Overview
 
----
+`jsonschema-changelog` is a powerful tool for managing JSON Schema evolution in production systems. It helps you:
 
-## Instalación
+- **Detect** all changes between schema versions (properties, types, constraints, etc.)
+- **Classify** changes as breaking, non-breaking, or deprecations
+- **Generate** changelogs in Markdown, JSON, or HTML formats
+- **Validate** backward and forward compatibility
+- **Create** migration scripts for data transformation
+
+Perfect for APIs, LIMS (Laboratory Information Management Systems), and any system where data schemas evolve over time.
+
+## 📦 Installation
+
 ```bash
-# Con pipx (recomendado)
-pipx install jsonschema-changelog
-
-# O con pip (en entorno virtual)
 pip install jsonschema-changelog
 ```
 
----
+Or with development dependencies:
 
-## Uso rápido
 ```bash
-# Generar changelog en Markdown y sugerencia semver
-jsonschema-changelog schema-old.json schema-new.json \
-  --format markdown \
-  --semver-suggestion \
-  --output CHANGELOG_SCHEMA.md
-
-# Salida JSON para CI/pipelines
-jsonschema-changelog schema-old.json schema-new.json \
-  --format json \
-  --semver-suggestion \
-  --output report.json
-
-# Fallar el proceso si hay cambios breaking (útil en PRs)
-jsonschema-changelog schema-old.json schema-new.json --fail-on major
+pip install jsonschema-changelog[dev]
 ```
 
-Opciones principales:
-- `--format {markdown,json}`: formato de salida.
-- `--output <ruta>`: archivo de salida (por defecto, imprime a stdout).
-- `--semver-suggestion`: incluye `suggested_semver` en la salida.
-- `--fail-on {patch,minor,major}`: salida con código ≠ 0 si el cambio mínimo detectado es ese nivel o superior.
-- `--config <archivo>`: archivo de configuración para overrides/reglas.
+## 🚀 Quick Start
 
-Exit codes (para CI):
-- 0: ejecución exitosa sin superar umbral de `--fail-on`.
-- 1: se superó el umbral de `--fail-on` (p. ej., hay breaking y se usó `--fail-on major`).
-- 2: error de uso/parseo.
+### Python API
 
----
+```python
+from jsonschema_changelog import SchemaDiff, ChangeClassifier, ChangelogGenerator
 
-## Ejemplo
-
-Schemas de ejemplo:
-```json
-// schema-v1.json
-{
-  "type": "object",
-  "properties": {
-    "id": { "type": "string" },
-    "age": { "type": "integer" }
-  },
-  "required": ["id"]
+# Define your schemas
+old_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "status": {"type": "string", "enum": ["active", "inactive"]}
+    },
+    "required": ["name"]
 }
-```
 
-```json
-// schema-v2.json
-{
-  "type": "object",
-  "properties": {
-    "id": { "type": "string" },
-    "age": { "type": "number" },
-    "email": { "type": "string" }
-  },
-  "required": ["id", "email"]
+new_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "status": {"type": "string", "enum": ["active", "inactive", "pending"]},
+        "email": {"type": "string", "format": "email"}  # New field
+    },
+    "required": ["name"]
 }
+
+# Detect changes
+differ = SchemaDiff(old_version="1.0.0", new_version="2.0.0")
+diff_result = differ.compare(old_schema, new_schema)
+
+print(f"Found {diff_result.change_count} changes")
+
+# Classify changes
+classifier = ChangeClassifier()
+classification = classifier.classify(diff_result)
+
+print(f"Breaking: {len(classification.breaking_changes)}")
+print(f"Non-breaking: {len(classification.non_breaking_changes)}")
+print(f"Compatible: {classification.is_compatible}")
+
+# Generate changelog
+generator = ChangelogGenerator(title="API Schema Changelog")
+changelog = generator.generate(classification)
+markdown = generator.to_markdown(changelog)
+print(markdown)
 ```
 
-Comando:
+### Command Line
+
 ```bash
-jsonschema-changelog schema-v1.json schema-v2.json --format markdown --semver-suggestion
+# Compare two schemas
+jsonschema-changelog diff old.json new.json
+
+# Generate changelog
+jsonschema-changelog changelog old.json new.json --format markdown -o CHANGELOG.md
+
+# Validate compatibility (fails on breaking changes)
+jsonschema-changelog validate old.json new.json --fail-on-breaking
+
+# Generate migration script
+jsonschema-changelog migrate old.json new.json --language python -o migrate.py
+
+# Show schema information
+jsonschema-changelog info schema.json
 ```
 
-Salida (Markdown):
-```markdown
-## JSON Schema Changelog
+## 📋 Types of Changes Detected
 
-Sugerencia semver: major
+### Properties
+- ➕ Added properties
+- ➖ Removed properties
+- 🔄 Modified properties (type, constraints, etc.)
 
-Cambios detectados:
-- Added property: email
-- Required changed: property 'email' is now required
-- Type changed: property 'age' from integer to number
+### Required Fields
+- 🔒 Fields becoming required
+- 🔓 Fields becoming optional
+
+### Types
+- 📝 Type changes (string → integer, etc.)
+- 📋 Type unions (adding/removing types)
+
+### Constraints
+- 📏 Length constraints (minLength, maxLength)
+- 🔢 Numeric constraints (minimum, maximum)
+- 📊 Array constraints (minItems, maxItems)
+
+### Enums
+- ✅ Added enum values
+- ❌ Removed enum values
+
+### Other
+- 📄 Format changes (email, date-time, etc.)
+- 🔤 Pattern changes (regex)
+- 📚 $ref changes
+- ⚠️ Deprecations
+- 📝 Documentation changes
+
+## 🏷️ Change Classification
+
+Changes are automatically classified by their impact:
+
+### 🚨 Breaking Changes
+- Removing a property
+- Making a field required
+- Reducing enum values
+- Making constraints stricter (higher minLength, lower maximum)
+- Changing type to a narrower type
+
+### ✨ Non-Breaking Changes
+- Adding optional properties
+- Making a field optional
+- Adding enum values
+- Relaxing constraints
+- Adding nullable to types
+
+### ⚠️ Deprecations
+- Marking fields as deprecated
+- Adding deprecation notices in descriptions
+
+### 📝 Documentation Changes
+- Title/description updates
+- Example changes
+
+## 🔧 API Reference
+
+### SchemaDiff
+
+```python
+from jsonschema_changelog import SchemaDiff
+
+differ = SchemaDiff(
+    old_version="1.0.0",
+    new_version="2.0.0",
+    include_documentation=True  # Include title/description changes
+)
+
+result = differ.compare(old_schema, new_schema)
+
+# Access changes
+for change in result.changes:
+    print(f"{change.change_type}: {change.path}")
+    print(f"  {change.description}")
 ```
 
-Salida (JSON):
-```json
-{
-  "suggested_semver": "major",
-  "changes": [
-    {
-      "kind": "property_added",
-      "path": "properties.email",
-      "breaking": false,
-      "details": { "type": "string" }
-    },
-    {
-      "kind": "required_added",
-      "path": "required.email",
-      "breaking": true,
-      "details": { "property": "email" }
-    },
-    {
-      "kind": "type_changed",
-      "path": "properties.age",
-      "breaking": "maybe",
-      "details": { "from": "integer", "to": "number" }
-    }
-  ],
-  "summary": {
-    "added": 1,
-    "removed": 0,
-    "required_added": 1,
-    "required_removed": 0,
-    "type_changed": 1,
-    "breaking_changes": 1
-  }
-}
+### ChangeClassifier
+
+```python
+from jsonschema_changelog import ChangeClassifier
+
+classifier = ChangeClassifier(strict_mode=False)
+classification = classifier.classify(diff_result)
+
+# Access classified changes
+for change in classification.breaking_changes:
+    print(f"🚨 {change.impact_description}")
+    print(f"   Migration: {change.migration_hint}")
 ```
 
-Nota: algunos cambios de tipo pueden ser “quizá breaking” según el contexto. Puedes forzar su interpretación con configuración.
+### ChangelogGenerator
 
----
+```python
+from jsonschema_changelog import ChangelogGenerator
 
-## Reglas de sugerencia semver (MVP)
-Heurística por defecto:
-- major (rompiente):
-  - Eliminación de propiedad existente.
-  - Añadir una propiedad a `required`.
-  - Cambio de tipo no compatible (p. ej., `string` → `number`, `object` → `array`).
-- minor (compatible):
-  - Añadir propiedad opcional.
-- patch:
-  - Cambios no estructurales (metadatos) o sin impacto detectado.
+generator = ChangelogGenerator(
+    title="My API Changelog",
+    description="Track schema changes",
+    include_documentation=False
+)
 
-Overrides:
-- Puedes declarar excepciones por ruta de propiedad (p. ej., considerar `integer` → `number` como no-breaking en tu dominio).
+changelog = generator.generate(classification, date="2024-01-15")
 
----
+# Multiple formats
+markdown = generator.to_markdown(changelog)
+json_output = generator.to_json(changelog)
+html = generator.to_html(changelog)
+```
 
-## Configuración (opcional)
-Archivo YAML/JSON de configuración para ajustar reglas y excepciones.
+### CompatibilityValidator
+
+```python
+from jsonschema_changelog import CompatibilityValidator
+
+validator = CompatibilityValidator(strict_mode=False)
+result = validator.validate(old_schema, new_schema)
+
+print(f"Level: {result.level}")  # FULL, BACKWARD, FORWARD, or NONE
+print(f"Backward compatible: {result.is_backward_compatible}")
+print(f"Forward compatible: {result.is_forward_compatible}")
+
+for issue in result.issues:
+    print(f"Issue: {issue.description}")
+    print(f"Suggestion: {issue.suggestion}")
+```
+
+### MigrationStrategy
+
+```python
+from jsonschema_changelog.migration import MigrationStrategy
+
+strategy = MigrationStrategy()
+plan = strategy.generate(classification)
+
+# Generate migration scripts
+python_script = plan.to_script("python")
+js_script = plan.to_script("javascript")
+
+# Execute migration on data
+migrated_data = strategy.execute(plan, original_data)
+```
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions
 
 ```yaml
-# jsonschema-changelog.yml
-rules:
-  # Forzar interpretación de cambios de tipo
-  type_change_overrides:
-    - path: "properties.age"
-      from: "integer"
-      to: "number"
-      breaking: false
-  # Tratar propiedades bajo un prefijo como experimentales (no-breaking al eliminar)
-  experimental_paths:
-    - "properties.experimental_.*"  # regex
-
-# Niveles mínimos por tipo de cambio (major/minor/patch)
-severity:
-  property_removed: major
-  property_added_optional: minor
-  required_added: major
-  required_removed: major
-  type_changed_default: major
-```
-
-Uso:
-```bash
-jsonschema-changelog schema-old.json schema-new.json --config jsonschema-changelog.yml
-```
-
----
-
-## Integración con CI (GitHub Actions)
-
-Ejemplo sencillo usando pipx:
-```yaml
-# .github/workflows/schema-diff.yml
-name: Schema Diff
+name: Schema Validation
 
 on:
   pull_request:
     paths:
-      - "schemas/**.json"
+      - 'schemas/**'
 
 jobs:
-  diff:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install jsonschema-changelog
+          python-version: '3.11'
+
+      - run: pip install jsonschema-changelog
+
+      - name: Validate schema compatibility
         run: |
-          pipx install jsonschema-changelog
-      - name: Run diff and generate report
+          jsonschema-changelog validate \
+            schemas/schema_v1.json \
+            schemas/schema_v2.json \
+            --fail-on-breaking
+
+      - name: Generate changelog
+        if: always()
         run: |
-          jsonschema-changelog schemas/schema-v1.json schemas/schema-v2.json \
-            --format markdown --semver-suggestion --output changelog.md || echo "Diff generated"
-      - name: Comment changelog on PR
-        uses: marocchino/sticky-pull-request-comment@v2
+          jsonschema-changelog changelog \
+            schemas/schema_v1.json \
+            schemas/schema_v2.json \
+            --format markdown \
+            --output SCHEMA_CHANGELOG.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
         with:
-          path: changelog.md
+          name: schema-changelog
+          path: SCHEMA_CHANGELOG.md
 ```
 
-Bloquear merges si hay breaking:
+### Pre-commit Hook
+
 ```yaml
-- name: Fail on breaking changes
-  run: |
-    jsonschema-changelog schemas/schema-v1.json schemas/schema-v2.json --fail-on major
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: schema-compatibility
+        name: Check Schema Compatibility
+        entry: jsonschema-changelog validate
+        language: python
+        files: \.json$
+        args: ['schemas/current.json', 'schemas/proposed.json']
 ```
 
----
+## 🏥 LIMS Use Case
 
-## API de salida JSON (MVP)
-Estructura orientativa:
-```json
-{
-  "suggested_semver": "major|minor|patch",
-  "changes": [
-    {
-      "kind": "property_added|property_removed|required_added|required_removed|type_changed",
-      "path": "properties.user.name",
-      "breaking": true,
-      "details": {}
-    }
-  ],
-  "summary": {
-    "added": 0,
-    "removed": 0,
-    "required_added": 0,
-    "required_removed": 0,
-    "type_changed": 0,
-    "breaking_changes": 0
-  }
-}
+This tool was designed with Laboratory Information Management Systems in mind:
+
+```python
+# Validate that patient data schema changes don't break existing records
+from jsonschema_changelog import CompatibilityValidator
+
+validator = CompatibilityValidator()
+result = validator.validate(
+    old_schema=patient_schema_v1,
+    new_schema=patient_schema_v2,
+    old_version="1.0.0",
+    new_version="2.0.0"
+)
+
+if not result.is_backward_compatible:
+    print("⚠️ Breaking changes detected!")
+    print("Existing patient records may be affected.")
+    
+    for suggestion in result.suggestions:
+        print(f"• {suggestion}")
 ```
 
----
+## 🛣️ Roadmap
 
-## Buenas prácticas
-- Versiona tus schemas junto al código o en un repo dedicado.
-- Usa el reporte JSON para dashboards de compatibilidad.
-- Añade reglas de override para casos de dominio que no sean universalmente breaking.
+- [ ] JSON Schema Draft 2020-12 full support
+- [ ] Schema versioning with Git integration
+- [ ] Visual diff in HTML output
+- [ ] Migration validation with sample data
+- [ ] OpenAPI/Swagger schema support
+- [ ] AsyncAPI schema support
+- [ ] Database schema comparison
 
----
+## 🤝 Contributing
 
-## Roadmap
-- Soporte para combinadores (`oneOf`, `anyOf`, `allOf`) y `$ref`.
-- Integración con OpenAPI (components/schemas).
-- Reglas de compatibilidad más ricas (rangos, `enum`, `format`, `pattern`).
-- Comentario automático en PR con sugerencia de bump y notas de migración.
-- Plugins de “reglas de dominio” y perfiles predefinidos.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
----
+## 📄 License
 
-## Contribuir
-¡Contribuciones bienvenidas!
-- Abre un issue con propuesta/bug.
-- Envía un PR con tests.
-- Estilo de código: black + isort + flake8.
-- Tests: pytest.
-
-Pasos de desarrollo:
-```bash
-git clone https://github.com/tu-org/jsonschema-changelog
-cd jsonschema-changelog
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
-```
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## Seguridad
-Este proyecto no procesa datos sensibles, pero puede formar parte de tus pipelines de release. Revisa cuidadosamente reglas y overrides antes de automatizar fallos de CI.
-
-Reporta vulnerabilidades por canales privados (SECURITY.md).
-
----
-
-## Licencia
-MIT. Consulta LICENSE para más detalles.
-
----
-
-## FAQ
-- ¿Funciona con OpenAPI? No en el MVP. Está en el roadmap mediante el análisis de `components.schemas`.
-- ¿Puede entender `$ref`? Parcialmente/no en MVP. Se recomienda resolver refs antes del diff o aceptar la limitación.
-- ¿Por qué sugiere major tan a menudo? Las reglas son conservadoras por defecto. Ajusta overrides en `--config`.
+<p align="center">
+  <img src="https://img.freepik.com/premium-vector/letter-b-owl-mascot-esport-gaming-logo-design-owl-night-bird-illustration-bird-gamer-esport-logo_15602-2190.jpg" alt="Búho Zurdo" width="100">
+  <br>
+  Part of the <strong>Búho Zurdo</strong> ecosystem
+  <br>
+  <em>Building reliable software, one schema at a time</em>
+</p>

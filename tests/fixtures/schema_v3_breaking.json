@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://buhozurdo.com/schemas/sample/v3.0.0",
+  "title": "Laboratory Sample v3.0.0",
+  "description": "Schema for laboratory sample data - Major breaking changes",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Renamed from sample_id - BREAKING",
+      "pattern": "^SAM-[0-9]{10}$"
+    },
+    "patient_ref": {
+      "type": "object",
+      "description": "Changed from string to object - BREAKING",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "sample_type": {
+      "type": "string",
+      "enum": ["blood", "urine", "tissue"],
+      "description": "Reduced enum values - BREAKING"
+    },
+    "collected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["new", "in_progress", "done", "failed"],
+      "description": "Changed enum values - BREAKING"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Reduced max length - BREAKING"
+    },
+    "temperature": {
+      "type": "integer",
+      "minimum": -80,
+      "maximum": 40,
+      "description": "Changed from number to integer - BREAKING"
+    },
+    "collector_id": {
+      "type": "string",
+      "description": "Now required - BREAKING"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["routine", "urgent", "stat"]
+    },
+    "barcode": {
+      "type": "string",
+      "deprecated": true,
+      "description": "DEPRECATED: Will be removed in v4"
+    },
+    "qr_code": {
+      "type": "string",
+      "description": "Replacement for barcode"
+    }
+  },
+  "required": ["id", "patient_ref", "sample_type", "collected_at", "collector_id"],
+  "additionalProperties": false
+}

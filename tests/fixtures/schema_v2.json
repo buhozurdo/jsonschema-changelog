@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://buhozurdo.com/schemas/sample/v2.0.0",
+  "title": "Laboratory Sample v2.0.0",
+  "description": "Schema for laboratory sample data in LIMS - Updated version",
+  "type": "object",
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique identifier for the sample",
+      "pattern": "^SAM-[0-9]{8}$"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to patient record"
+    },
+    "sample_type": {
+      "type": "string",
+      "enum": ["blood", "urine", "tissue", "swab", "saliva", "csf"],
+      "description": "Type of biological sample - expanded options"
+    },
+    "collected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Collection timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "completed", "rejected", "archived"],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Additional notes - increased limit"
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": -80,
+      "maximum": 40,
+      "description": "Storage temperature in Celsius"
+    },
+    "collector_id": {
+      "type": "string",
+      "description": "ID of the person who collected the sample"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["routine", "urgent", "stat"],
+      "default": "routine",
+      "description": "Processing priority"
+    },
+    "barcode": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{12}$",
+      "description": "Sample barcode"
+    }
+  },
+  "required": ["sample_id", "patient_id", "sample_type", "collected_at"],
+  "additionalProperties": false
+}

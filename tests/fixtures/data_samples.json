@@ -1,0 +1,45 @@
+{
+  "valid_v1_sample": {
+    "sample_id": "SAM-00000001",
+    "patient_id": "PAT-12345",
+    "sample_type": "blood",
+    "collected_at": "2024-01-15T10:30:00Z",
+    "status": "pending",
+    "notes": "Fasting sample",
+    "temperature": 4.5
+  },
+  "valid_v2_sample": {
+    "sample_id": "SAM-00000002",
+    "patient_id": "PAT-12345",
+    "sample_type": "saliva",
+    "collected_at": "2024-01-15T11:00:00Z",
+    "status": "processing",
+    "notes": "COVID-19 test",
+    "temperature": 20,
+    "collector_id": "TECH-001",
+    "priority": "urgent",
+    "barcode": "ABC123456789"
+  },
+  "invalid_v3_sample": {
+    "sample_id": "SAM-00000003",
+    "patient_id": "PAT-12345",
+    "sample_type": "swab",
+    "collected_at": "2024-01-15T12:00:00Z"
+  },
+  "migration_test_data": [
+    {
+      "sample_id": "SAM-00000001",
+      "patient_id": "PAT-001",
+      "sample_type": "blood",
+      "collected_at": "2024-01-01T00:00:00Z",
+      "status": "completed"
+    },
+    {
+      "sample_id": "SAM-00000002",
+      "patient_id": "PAT-002",
+      "sample_type": "tissue",
+      "collected_at": "2024-01-02T00:00:00Z",
+      "status": "pending"
+    }
+  ]
+}

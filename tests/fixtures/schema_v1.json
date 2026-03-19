@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://buhozurdo.com/schemas/sample/v1.0.0",
+  "title": "Laboratory Sample v1.0.0",
+  "description": "Schema for laboratory sample data in LIMS",
+  "type": "object",
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique identifier for the sample",
+      "pattern": "^SAM-[0-9]{8}$"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to patient record"
+    },
+    "sample_type": {
+      "type": "string",
+      "enum": ["blood", "urine", "tissue", "swab"],
+      "description": "Type of biological sample"
+    },
+    "collected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Collection timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "completed"],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": -80,
+      "maximum": 40,
+      "description": "Storage temperature in Celsius"
+    }
+  },
+  "required": ["sample_id", "patient_id", "sample_type", "collected_at"],
+  "additionalProperties": false
+}
