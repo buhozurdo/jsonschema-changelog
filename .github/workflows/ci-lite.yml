@@ -1,0 +1,30 @@
+name: CI Lite
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  lint:
+    name: Lint & Format (Python 3.11)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev dependencies
+        run: pip install ".[dev]"
+
+      - name: Run ruff
+        run: ruff check .
+
+      - name: Run black
+        run: black --check .
