@@ -31,6 +31,12 @@ jobs:
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
           python -m build
 
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: buhozurdo/jsonschema-changelog
+      
       - name: Upload binaries to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
