@@ -122,6 +122,7 @@ class ChangelogGenerator:
         >>> generator = ChangelogGenerator(title="API Schema Changelog")
         >>> changelog = generator.generate(classification_result)
         >>> markdown = generator.to_markdown(changelog)
+
     """
 
     def __init__(
@@ -136,6 +137,7 @@ class ChangelogGenerator:
             title: Title for the changelog
             description: Description of the changelog
             include_documentation: Whether to include documentation changes
+
         """
         self.title = title
         self.description = description
@@ -159,6 +161,7 @@ class ChangelogGenerator:
 
         Returns:
             Changelog with the changes
+
         """
         changelog = Changelog(
             title=self.title,
@@ -184,6 +187,7 @@ class ChangelogGenerator:
 
         Returns:
             Changelog with all version entries
+
         """
         changelog = Changelog(
             title=self.title,
@@ -207,13 +211,13 @@ class ChangelogGenerator:
 
         # Filter out documentation changes if not included
         if not self.include_documentation:
-            changes = [
-                c for c in changes if c.category != ChangeCategory.DOCUMENTATION
-            ]
+            changes = [c for c in changes if c.category != ChangeCategory.DOCUMENTATION]
 
         # Calculate summary
         summary = {
-            "breaking": sum(1 for c in changes if c.category == ChangeCategory.BREAKING),
+            "breaking": sum(
+                1 for c in changes if c.category == ChangeCategory.BREAKING
+            ),
             "non_breaking": sum(
                 1 for c in changes if c.category == ChangeCategory.NON_BREAKING
             ),
@@ -250,6 +254,7 @@ class ChangelogGenerator:
 
         Returns:
             Formatted changelog string
+
         """
         # Import formatters lazily to avoid circular imports
         if format_type == "markdown":

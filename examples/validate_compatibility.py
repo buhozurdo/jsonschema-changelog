@@ -5,8 +5,6 @@ This example demonstrates how to check backward and forward compatibility
 between schema versions, useful for CI/CD integration.
 """
 
-import sys
-
 from jsonschema_changelog import CompatibilityValidator
 
 # Schema versions with different compatibility levels
@@ -102,8 +100,12 @@ def main():
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    print(f"v1 → v2: {'✅ Safe to deploy' if is_compatible_1 else '❌ Requires migration'}")
-    print(f"v2 → v3: {'✅ Safe to deploy' if is_compatible_2 else '❌ Requires migration'}")
+    print(
+        f"v1 → v2: {'✅ Safe to deploy' if is_compatible_1 else '❌ Requires migration'}"
+    )
+    print(
+        f"v2 → v3: {'✅ Safe to deploy' if is_compatible_2 else '❌ Requires migration'}"
+    )
 
     # CI/CD integration example
     print("\n" + "=" * 60)

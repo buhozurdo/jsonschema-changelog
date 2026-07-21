@@ -38,7 +38,7 @@ class TestDiffCommand:
     def test_diff_basic(self, runner, schema_v1_path, schema_v2_path):
         """Test basic diff command."""
         result = runner.invoke(main, ["diff", schema_v1_path, schema_v2_path])
-        
+
         assert result.exit_code == 0
         assert "change" in result.output.lower()
 
@@ -47,7 +47,7 @@ class TestDiffCommand:
         result = runner.invoke(
             main, ["diff", schema_v1_path, schema_v2_path, "--format", "json"]
         )
-        
+
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "changes" in data
@@ -57,7 +57,7 @@ class TestDiffCommand:
         result = runner.invoke(
             main, ["diff", schema_v1_path, schema_v2_path, "--format", "markdown"]
         )
-        
+
         assert result.exit_code == 0
         assert "#" in result.output
 
@@ -75,14 +75,14 @@ class TestDiffCommand:
                 "2.0.0",
             ],
         )
-        
+
         assert result.exit_code == 0
         assert "1.0.0" in result.output or "2.0.0" in result.output
 
     def test_diff_nonexistent_file(self, runner, schema_v1_path):
         """Test diff with nonexistent file."""
         result = runner.invoke(main, ["diff", schema_v1_path, "nonexistent.json"])
-        
+
         assert result.exit_code != 0
 
 
@@ -92,7 +92,7 @@ class TestChangelogCommand:
     def test_changelog_basic(self, runner, schema_v1_path, schema_v2_path):
         """Test basic changelog command."""
         result = runner.invoke(main, ["changelog", schema_v1_path, schema_v2_path])
-        
+
         assert result.exit_code == 0
         assert "#" in result.output  # Markdown header
 
@@ -101,7 +101,7 @@ class TestChangelogCommand:
         result = runner.invoke(
             main, ["changelog", schema_v1_path, schema_v2_path, "--format", "json"]
         )
-        
+
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "entries" in data
@@ -111,7 +111,7 @@ class TestChangelogCommand:
         result = runner.invoke(
             main, ["changelog", schema_v1_path, schema_v2_path, "--format", "html"]
         )
-        
+
         assert result.exit_code == 0
         assert "<html" in result.output
 
@@ -127,11 +127,13 @@ class TestChangelogCommand:
                 "My Custom Changelog",
             ],
         )
-        
+
         assert result.exit_code == 0
         assert "My Custom Changelog" in result.output
 
-    def test_changelog_with_output_file(self, runner, schema_v1_path, schema_v2_path, tmp_path):
+    def test_changelog_with_output_file(
+        self, runner, schema_v1_path, schema_v2_path, tmp_path
+    ):
         """Test changelog output to file."""
         output_file = tmp_path / "CHANGELOG.md"
         result = runner.invoke(
@@ -144,7 +146,7 @@ class TestChangelogCommand:
                 str(output_file),
             ],
         )
-        
+
         assert result.exit_code == 0
         assert output_file.exists()
         content = output_file.read_text()
@@ -157,7 +159,7 @@ class TestValidateCommand:
     def test_validate_compatible(self, runner, schema_v1_path, schema_v2_path):
         """Test validate with compatible schemas."""
         result = runner.invoke(main, ["validate", schema_v1_path, schema_v2_path])
-        
+
         # v1 to v2 is backward compatible
         assert result.exit_code == 0
         assert "compatible" in result.output.lower()
@@ -165,7 +167,7 @@ class TestValidateCommand:
     def test_validate_incompatible(self, runner, schema_v2_path, schema_v3_path):
         """Test validate with incompatible schemas."""
         result = runner.invoke(main, ["validate", schema_v2_path, schema_v3_path])
-        
+
         # v2 to v3 has breaking changes
         assert result.exit_code != 0
         assert "broken" in result.output.lower() or "❌" in result.output
@@ -176,7 +178,7 @@ class TestValidateCommand:
             main,
             ["validate", schema_v2_path, schema_v3_path, "--no-fail-on-breaking"],
         )
-        
+
         # Should not fail even with breaking changes
         assert result.exit_code == 0
 
@@ -185,7 +187,7 @@ class TestValidateCommand:
         result = runner.invoke(
             main, ["validate", schema_v1_path, schema_v2_path, "--format", "json"]
         )
-        
+
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "is_backward_compatible" in data
@@ -195,7 +197,7 @@ class TestValidateCommand:
         result = runner.invoke(
             main, ["validate", schema_v1_path, schema_v2_path, "--strict"]
         )
-        
+
         # With strict mode, some forward compatibility issues may be flagged
         assert result.exit_code == 0  # Still backward compatible
 
@@ -208,20 +210,23 @@ class TestMigrateCommand:
         result = runner.invoke(
             main, ["migrate", schema_v1_path, schema_v2_path, "--language", "python"]
         )
-        
+
         assert result.exit_code == 0
         assert "def migrate" in result.output
 
     def test_migrate_javascript(self, runner, schema_v1_path, schema_v2_path):
         """Test migrate command generating JavaScript script."""
         result = runner.invoke(
-            main, ["migrate", schema_v1_path, schema_v2_path, "--language", "javascript"]
+            main,
+            ["migrate", schema_v1_path, schema_v2_path, "--language", "javascript"],
         )
-        
+
         assert result.exit_code == 0
         assert "function migrate" in result.output
 
-    def test_migrate_with_output_file(self, runner, schema_v1_path, schema_v2_path, tmp_path):
+    def test_migrate_with_output_file(
+        self, runner, schema_v1_path, schema_v2_path, tmp_path
+    ):
         """Test migrate output to file."""
         output_file = tmp_path / "migrate.py"
         result = runner.invoke(
@@ -234,7 +239,7 @@ class TestMigrateCommand:
                 str(output_file),
             ],
         )
-        
+
         assert result.exit_code == 0
         assert output_file.exists()
         content = output_file.read_text()
@@ -247,7 +252,7 @@ class TestInfoCommand:
     def test_info_basic(self, runner, schema_v1_path):
         """Test basic info command."""
         result = runner.invoke(main, ["info", schema_v1_path])
-        
+
         assert result.exit_code == 0
         assert "Schema:" in result.output
         assert "Properties:" in result.output
@@ -255,7 +260,7 @@ class TestInfoCommand:
     def test_info_shows_properties(self, runner, schema_v1_path):
         """Test that info shows properties."""
         result = runner.invoke(main, ["info", schema_v1_path])
-        
+
         assert result.exit_code == 0
         assert "sample_id" in result.output
         assert "patient_id" in result.output
@@ -267,7 +272,7 @@ class TestVersionOption:
     def test_version(self, runner):
         """Test --version option."""
         result = runner.invoke(main, ["--version"])
-        
+
         assert result.exit_code == 0
         assert "jsonschema-changelog" in result.output
         assert "0.1.0" in result.output

@@ -15,6 +15,7 @@ class JsonFormatter:
     Example:
         >>> formatter = JsonFormatter()
         >>> json_output = formatter.format(changelog)
+
     """
 
     def __init__(
@@ -29,6 +30,7 @@ class JsonFormatter:
             indent: JSON indentation level
             sort_keys: Whether to sort dictionary keys
             include_metadata: Include metadata in output
+
         """
         self.indent = indent
         self.sort_keys = sort_keys
@@ -42,6 +44,7 @@ class JsonFormatter:
 
         Returns:
             JSON formatted string
+
         """
         data = self._to_dict(changelog)
         return json.dumps(

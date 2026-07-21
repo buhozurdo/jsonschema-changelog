@@ -1,6 +1,6 @@
 """Markdown formatter for changelogs."""
 
-from typing import Any, List
+from typing import List
 
 from jsonschema_changelog.changelog import Changelog, VersionEntry
 from jsonschema_changelog.classifier import ChangeCategory, ClassifiedChange
@@ -15,6 +15,7 @@ class MarkdownFormatter:
     Example:
         >>> formatter = MarkdownFormatter()
         >>> markdown = formatter.format(changelog)
+
     """
 
     def __init__(
@@ -31,6 +32,7 @@ class MarkdownFormatter:
             include_summary: Include change summary
             show_paths: Show schema paths in changes
             show_migration_hints: Show migration hints for breaking changes
+
         """
         self.include_toc = include_toc
         self.include_summary = include_summary
@@ -45,6 +47,7 @@ class MarkdownFormatter:
 
         Returns:
             Markdown formatted string
+
         """
         lines: List[str] = []
 
@@ -116,18 +119,14 @@ class MarkdownFormatter:
         # Deprecations
         if entry.deprecations:
             lines.extend(
-                self._format_change_section(
-                    "⚠️ Deprecations", entry.deprecations
-                )
+                self._format_change_section("⚠️ Deprecations", entry.deprecations)
             )
             lines.append("")
 
         # Non-breaking changes
         if entry.non_breaking_changes:
             lines.extend(
-                self._format_change_section(
-                    "✨ Changes", entry.non_breaking_changes
-                )
+                self._format_change_section("✨ Changes", entry.non_breaking_changes)
             )
             lines.append("")
 
@@ -149,7 +148,7 @@ class MarkdownFormatter:
         summary = entry.summary
         total = summary.get("total", 0)
 
-        lines.append(f"| Category | Count |")
+        lines.append("| Category | Count |")
         lines.append("| --- | --- |")
 
         if summary.get("breaking", 0) > 0:

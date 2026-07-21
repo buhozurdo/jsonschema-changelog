@@ -114,4 +114,4 @@ fail_under = 80
 line-length = 88
 target-version = "py38"
 select = ["E", "F", "W", "I", "N", "D", "UP"]
-ignore = ["D100", "D104"]
+ignore = ["D100", "D104", "D103"]

@@ -7,7 +7,12 @@ import pytest
 
 from jsonschema_changelog.classifier import ChangeClassifier
 from jsonschema_changelog.diff import ChangeType, DiffResult, SchemaChange, SchemaDiff
-from jsonschema_changelog.migration import MigrationPlan, MigrationStep, MigrationStrategy, MigrationType
+from jsonschema_changelog.migration import (
+    MigrationPlan,
+    MigrationStep,
+    MigrationStrategy,
+    MigrationType,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -43,10 +48,10 @@ class TestMigrationStrategy:
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         assert plan.step_count == 1
         assert plan.steps[0].operation == MigrationType.ADD_FIELD
 
@@ -60,10 +65,10 @@ class TestMigrationStrategy:
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         assert plan.step_count == 1
         assert plan.steps[0].operation == MigrationType.REMOVE_FIELD
         assert not plan.steps[0].reversible  # Data loss
@@ -79,10 +84,10 @@ class TestMigrationStrategy:
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         assert plan.step_count == 1
         assert plan.steps[0].operation == MigrationType.CHANGE_TYPE
 
@@ -97,10 +102,10 @@ class TestMigrationStrategy:
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         assert plan.step_count == 1
         assert plan.steps[0].operation == MigrationType.SET_DEFAULT
 
@@ -115,12 +120,12 @@ class TestMigrationStrategy:
                 params={"default_value": "default"},
             )
         )
-        
+
         data = {"existing": "value"}
-        
+
         strategy = MigrationStrategy()
         result = strategy.execute(plan, data)
-        
+
         assert "new_field" in result
         assert result["new_field"] == "default"
         assert result["existing"] == "value"
@@ -135,12 +140,12 @@ class TestMigrationStrategy:
                 description="Remove old_field",
             )
         )
-        
+
         data = {"old_field": "value", "keep": "this"}
-        
+
         strategy = MigrationStrategy()
         result = strategy.execute(plan, data)
-        
+
         assert "old_field" not in result
         assert result["keep"] == "this"
 
@@ -155,12 +160,12 @@ class TestMigrationStrategy:
                 params={"new_type": "integer"},
             )
         )
-        
+
         data = {"count": "42"}
-        
+
         strategy = MigrationStrategy()
         result = strategy.execute(plan, data)
-        
+
         assert result["count"] == 42
         assert isinstance(result["count"], int)
 
@@ -168,20 +173,20 @@ class TestMigrationStrategy:
         """Test migration from v1 to v2 schema."""
         differ = SchemaDiff(old_version="1.0.0", new_version="2.0.0")
         diff_result = differ.compare(schema_v1, schema_v2)
-        
+
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         # Should have steps for new properties
         assert plan.step_count > 0
-        
+
         # Migrate sample data
         sample = data_samples["valid_v1_sample"]
         migrated = strategy.execute(plan, sample)
-        
+
         # Original data should be preserved
         assert migrated["sample_id"] == sample["sample_id"]
         assert migrated["patient_id"] == sample["patient_id"]
@@ -204,9 +209,9 @@ class TestMigrationStrategy:
                 description="Remove legacy field",
             )
         )
-        
+
         script = plan.to_script("python")
-        
+
         assert "def migrate(data" in script
         assert "email" in script
         assert "legacy" in script
@@ -224,9 +229,9 @@ class TestMigrationStrategy:
                 params={"default_value": ""},
             )
         )
-        
+
         script = plan.to_script("javascript")
-        
+
         assert "function migrate(data)" in script
         assert "email" in script
         assert "module.exports" in script
@@ -234,7 +239,7 @@ class TestMigrationStrategy:
     def test_plan_reversibility(self):
         """Test plan reversibility detection."""
         plan = MigrationPlan(source_version="1", target_version="2")
-        
+
         # Reversible step
         plan.add_step(
             MigrationStep(
@@ -245,7 +250,7 @@ class TestMigrationStrategy:
             )
         )
         assert plan.is_reversible
-        
+
         # Non-reversible step
         plan.add_step(
             MigrationStep(
@@ -266,10 +271,10 @@ class TestMigrationStrategy:
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
         classifier = ChangeClassifier()
         classification = classifier.classify(diff_result)
-        
+
         strategy = MigrationStrategy()
         plan = strategy.generate(classification)
-        
+
         # Should have warning about breaking change
         assert len(plan.warnings) > 0
         assert "Breaking" in plan.warnings[0]
@@ -277,10 +282,10 @@ class TestMigrationStrategy:
     def test_custom_transformer(self):
         """Test custom value transformer."""
         strategy = MigrationStrategy()
-        
+
         # Register custom transformer
         strategy.register_transformer("uppercase", lambda x: x.upper())
-        
+
         plan = MigrationPlan(source_version="1", target_version="2")
         plan.add_step(
             MigrationStep(
@@ -290,8 +295,8 @@ class TestMigrationStrategy:
                 params={"transform": "uppercase"},
             )
         )
-        
+
         data = {"name": "test"}
         result = strategy.execute(plan, data)
-        
+
         assert result["name"] == "TEST"

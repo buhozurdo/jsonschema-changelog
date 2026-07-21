@@ -9,7 +9,6 @@ from jsonschema_changelog.classifier import (
     ChangeCategory,
     ChangeClassifier,
     ClassificationResult,
-    Severity,
     classify_changes,
 )
 from jsonschema_changelog.diff import ChangeType, DiffResult, SchemaChange, SchemaDiff
@@ -46,10 +45,10 @@ class TestChangeClassifier:
             old_value={"type": "string"},
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
         assert result.breaking_changes[0].category == ChangeCategory.BREAKING
 
@@ -61,10 +60,10 @@ class TestChangeClassifier:
             new_value=True,
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
 
     def test_enum_removed_is_breaking(self):
@@ -75,10 +74,10 @@ class TestChangeClassifier:
             old_value=["x"],
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
 
     def test_property_added_is_non_breaking(self):
@@ -89,10 +88,10 @@ class TestChangeClassifier:
             new_value={"type": "string"},
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.non_breaking_changes) == 1
         assert result.is_compatible
 
@@ -104,10 +103,10 @@ class TestChangeClassifier:
             old_value=True,
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.non_breaking_changes) == 1
 
     def test_enum_added_is_non_breaking(self):
@@ -118,10 +117,10 @@ class TestChangeClassifier:
             new_value=["new_value"],
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.non_breaking_changes) == 1
 
     def test_deprecation_detected(self):
@@ -132,10 +131,10 @@ class TestChangeClassifier:
             new_value=True,
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.deprecations) == 1
 
     def test_description_change_is_documentation(self):
@@ -147,10 +146,10 @@ class TestChangeClassifier:
             new_value="New desc",
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.documentation_changes) == 1
 
     def test_type_change_integer_to_number_is_non_breaking(self):
@@ -162,10 +161,10 @@ class TestChangeClassifier:
             new_value="number",
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.non_breaking_changes) == 1
 
     def test_type_change_string_to_integer_is_breaking(self):
@@ -177,10 +176,10 @@ class TestChangeClassifier:
             new_value="integer",
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
 
     def test_minlength_increased_is_breaking(self):
@@ -193,10 +192,10 @@ class TestChangeClassifier:
             metadata={"constraint": "minLength"},
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
 
     def test_maxlength_decreased_is_breaking(self):
@@ -209,10 +208,10 @@ class TestChangeClassifier:
             metadata={"constraint": "maxLength"},
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.breaking_changes) == 1
 
     def test_maxlength_increased_is_non_breaking(self):
@@ -225,20 +224,20 @@ class TestChangeClassifier:
             metadata={"constraint": "maxLength"},
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert len(result.non_breaking_changes) == 1
 
     def test_fixture_v1_to_v2_is_compatible(self, schema_v1, schema_v2):
         """v1 to v2 should be backward compatible."""
         differ = SchemaDiff()
         diff_result = differ.compare(schema_v1, schema_v2)
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         # v2 only adds optional properties and expands enums
         assert result.is_compatible
         assert len(result.breaking_changes) == 0
@@ -247,10 +246,10 @@ class TestChangeClassifier:
         """v2 to v3 should NOT be backward compatible."""
         differ = SchemaDiff()
         diff_result = differ.compare(schema_v2, schema_v3)
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         # v3 has breaking changes
         assert not result.is_compatible
         assert len(result.breaking_changes) > 0
@@ -264,12 +263,12 @@ class TestChangeClassifier:
             new_value="new",
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         # Non-strict mode
         classifier = ChangeClassifier(strict_mode=False)
         result = classifier.classify(diff_result)
         assert len(result.breaking_changes) == 0
-        
+
         # Strict mode
         classifier_strict = ChangeClassifier(strict_mode=True)
         result_strict = classifier_strict.classify(diff_result)
@@ -284,10 +283,10 @@ class TestChangeClassifier:
             SchemaChange(path="d", change_type=ChangeType.DEPRECATED),
         ]
         diff_result = DiffResult(old_version="1", new_version="2", changes=changes)
-        
+
         classifier = ChangeClassifier()
         result = classifier.classify(diff_result)
-        
+
         assert result.summary["breaking"] == 1
         assert result.summary["non_breaking"] == 2
         assert result.summary["deprecation"] == 1
@@ -304,7 +303,7 @@ class TestConvenienceFunctions:
             change_type=ChangeType.REMOVED,
         )
         diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
-        
+
         result = classify_changes(diff_result)
         assert isinstance(result, ClassificationResult)
         assert len(result.breaking_changes) == 1

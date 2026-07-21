@@ -106,6 +106,7 @@ def main():
     # Export as dictionary (for JSON serialization)
     print("\nJSON representation:")
     import json
+
     print(json.dumps(result.to_dict(), indent=2, default=str))
 
 

@@ -13,8 +13,11 @@ import click
 from jsonschema_changelog import __version__
 from jsonschema_changelog.changelog import ChangelogGenerator
 from jsonschema_changelog.classifier import ChangeClassifier
-from jsonschema_changelog.compatibility import CompatibilityValidator
-from jsonschema_changelog.diff import SchemaDiff
+from jsonschema_changelog.compatibility import (
+    CompatibilityResult,
+    CompatibilityValidator,
+)
+from jsonschema_changelog.diff import DiffResult, SchemaDiff
 from jsonschema_changelog.migration import MigrationStrategy
 from jsonschema_changelog.utils import extract_version, load_schema
 
@@ -40,10 +43,16 @@ def main() -> None:
     default="text",
     help="Output format",
 )
-@click.option("--output", "-o", type=click.Path(), help="Output file (stdout if not specified)")
+@click.option(
+    "--output", "-o", type=click.Path(), help="Output file (stdout if not specified)"
+)
 @click.option("--old-version", help="Version label for old schema")
 @click.option("--new-version", help="Version label for new schema")
-@click.option("--include-docs/--no-include-docs", default=True, help="Include documentation changes")
+@click.option(
+    "--include-docs/--no-include-docs",
+    default=True,
+    help="Include documentation changes",
+)
 def diff(
     old_schema: str,
     new_schema: str,
@@ -60,6 +69,7 @@ def diff(
 
     Example:
         jsonschema-changelog diff schema_v1.json schema_v2.json
+
     """
     try:
         old = load_schema(old_schema)
@@ -131,6 +141,7 @@ def changelog(
 
     Example:
         jsonschema-changelog changelog v1/schema.json v2/schema.json -f markdown -o CHANGELOG.md
+
     """
     try:
         old = load_schema(old_schema)
@@ -175,7 +186,9 @@ def changelog(
 @main.command()
 @click.argument("old_schema", type=click.Path(exists=True))
 @click.argument("new_schema", type=click.Path(exists=True))
-@click.option("--strict/--no-strict", default=False, help="Strict compatibility checking")
+@click.option(
+    "--strict/--no-strict", default=False, help="Strict compatibility checking"
+)
 @click.option(
     "--format",
     "-f",
@@ -207,6 +220,7 @@ def validate(
 
     Example:
         jsonschema-changelog validate old.json new.json --strict
+
     """
     try:
         old = load_schema(old_schema)
@@ -268,6 +282,7 @@ def migrate(
 
     Example:
         jsonschema-changelog migrate v1.json v2.json -l python -o migrate.py
+
     """
     try:
         old = load_schema(old_schema)
@@ -321,6 +336,7 @@ def info(schema: str) -> None:
 
     Example:
         jsonschema-changelog info schema.json
+
     """
     try:
         data = load_schema(schema)
@@ -354,7 +370,7 @@ def _write_output(content: str, output: Optional[str]) -> None:
         click.echo(content)
 
 
-def _format_diff_text(result) -> str:
+def _format_diff_text(result: DiffResult) -> str:
     """Format diff result as text."""
     lines = [
         f"Schema Diff: {result.old_version} → {result.new_version}",
@@ -373,7 +389,7 @@ def _format_diff_text(result) -> str:
     return "\n".join(lines)
 
 
-def _format_diff_markdown(result) -> str:
+def _format_diff_markdown(result: DiffResult) -> str:
     """Format diff result as Markdown."""
     lines = [
         f"# Schema Diff: {result.old_version} → {result.new_version}",
@@ -394,7 +410,7 @@ def _format_diff_markdown(result) -> str:
     return "\n".join(lines)
 
 
-def _format_compatibility_text(result) -> str:
+def _format_compatibility_text(result: CompatibilityResult) -> str:
     """Format compatibility result as text."""
     lines = [
         f"Compatibility Check: {result.old_version} → {result.new_version}",

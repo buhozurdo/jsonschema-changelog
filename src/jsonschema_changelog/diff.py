@@ -6,7 +6,7 @@ between JSON Schema versions.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
 
 
 class ChangeType(Enum):
@@ -124,6 +124,7 @@ class SchemaDiff:
         >>> result = diff.compare(old_schema, new_schema)
         >>> for change in result.changes:
         ...     print(change.description)
+
     """
 
     # Keywords that affect validation
@@ -194,6 +195,7 @@ class SchemaDiff:
             old_version: Version label for the old schema
             new_version: Version label for the new schema
             include_documentation: Whether to include documentation changes
+
         """
         self.old_version = old_version
         self.new_version = new_version
@@ -216,6 +218,7 @@ class SchemaDiff:
 
         Returns:
             DiffResult containing all detected changes
+
         """
         version_old = old_version or self.old_version
         version_new = new_version or self.new_version
@@ -248,6 +251,7 @@ class SchemaDiff:
             new_schema: The modified schema or subschema
             path: Current path in the schema
             result: DiffResult to accumulate changes
+
         """
         # Handle None cases
         if old_schema is None:
@@ -595,9 +599,7 @@ class SchemaDiff:
         if old_additional is None and new_additional is None:
             return
 
-        add_path = (
-            f"{path}.additionalProperties" if path else "additionalProperties"
-        )
+        add_path = f"{path}.additionalProperties" if path else "additionalProperties"
 
         if isinstance(old_additional, dict) and isinstance(new_additional, dict):
             self._compare_schemas(old_additional, new_additional, add_path, result)

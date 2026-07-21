@@ -7,7 +7,11 @@ import pytest
 from jsonschema_changelog.changelog import Changelog, VersionEntry
 from jsonschema_changelog.classifier import ChangeCategory, ClassifiedChange, Severity
 from jsonschema_changelog.diff import ChangeType, SchemaChange
-from jsonschema_changelog.formatters import HtmlFormatter, JsonFormatter, MarkdownFormatter
+from jsonschema_changelog.formatters import (
+    HtmlFormatter,
+    JsonFormatter,
+    MarkdownFormatter,
+)
 
 
 @pytest.fixture
@@ -17,7 +21,7 @@ def sample_changelog():
         title="Test Changelog",
         description="Test description",
     )
-    
+
     # Create sample changes
     breaking_change = ClassifiedChange(
         change=SchemaChange(
@@ -30,7 +34,7 @@ def sample_changelog():
         impact_description="Property removed",
         migration_hint="Remove references to this field",
     )
-    
+
     non_breaking_change = ClassifiedChange(
         change=SchemaChange(
             path="properties.email",
@@ -41,7 +45,7 @@ def sample_changelog():
         severity=Severity.LOW,
         impact_description="New optional property",
     )
-    
+
     deprecation = ClassifiedChange(
         change=SchemaChange(
             path="properties.legacy",
@@ -52,7 +56,7 @@ def sample_changelog():
         severity=Severity.MEDIUM,
         impact_description="Field deprecated",
     )
-    
+
     entry = VersionEntry(
         version="2.0.0",
         previous_version="1.0.0",
@@ -66,7 +70,7 @@ def sample_changelog():
             "total": 3,
         },
     )
-    
+
     changelog.add_entry(entry)
     return changelog
 
@@ -78,7 +82,7 @@ class TestMarkdownFormatter:
         """Test basic Markdown formatting."""
         formatter = MarkdownFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "# Test Changelog" in output
         assert "2.0.0" in output
         assert "Breaking Changes" in output
@@ -87,7 +91,7 @@ class TestMarkdownFormatter:
         """Test that all sections are included."""
         formatter = MarkdownFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "Breaking Changes" in output
         assert "Deprecations" in output
         assert "Changes" in output  # Non-breaking
@@ -96,7 +100,7 @@ class TestMarkdownFormatter:
         """Test that summary table is included."""
         formatter = MarkdownFormatter(include_summary=True)
         output = formatter.format(sample_changelog)
-        
+
         assert "Summary" in output
         assert "| Category |" in output
 
@@ -104,21 +108,21 @@ class TestMarkdownFormatter:
         """Test formatting without summary."""
         formatter = MarkdownFormatter(include_summary=False)
         output = formatter.format(sample_changelog)
-        
+
         assert "| Category |" not in output
 
     def test_format_includes_paths(self, sample_changelog):
         """Test that paths are shown."""
         formatter = MarkdownFormatter(show_paths=True)
         output = formatter.format(sample_changelog)
-        
+
         assert "properties.name" in output
 
     def test_format_without_paths(self, sample_changelog):
         """Test formatting without paths."""
         formatter = MarkdownFormatter(show_paths=False)
         output = formatter.format(sample_changelog)
-        
+
         # Path should not appear in the detailed format
         assert "Path:" not in output
 
@@ -126,14 +130,14 @@ class TestMarkdownFormatter:
         """Test that migration hints are shown."""
         formatter = MarkdownFormatter(show_migration_hints=True)
         output = formatter.format(sample_changelog)
-        
+
         assert "Migration:" in output or "🛠️" in output
 
     def test_format_breaking_badge(self, sample_changelog):
         """Test breaking change badge."""
         formatter = MarkdownFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "BREAKING" in output or "🚨" in output
 
 
@@ -144,7 +148,7 @@ class TestJsonFormatter:
         """Test that output is valid JSON."""
         formatter = JsonFormatter()
         output = formatter.format(sample_changelog)
-        
+
         data = json.loads(output)
         assert data is not None
 
@@ -152,7 +156,7 @@ class TestJsonFormatter:
         """Test JSON structure."""
         formatter = JsonFormatter()
         output = formatter.format(sample_changelog)
-        
+
         data = json.loads(output)
         assert data["title"] == "Test Changelog"
         assert "entries" in data
@@ -162,10 +166,10 @@ class TestJsonFormatter:
         """Test entry structure in JSON."""
         formatter = JsonFormatter()
         output = formatter.format(sample_changelog)
-        
+
         data = json.loads(output)
         entry = data["entries"][0]
-        
+
         assert entry["version"] == "2.0.0"
         assert entry["previous_version"] == "1.0.0"
         assert "changes" in entry
@@ -175,7 +179,7 @@ class TestJsonFormatter:
         """Test custom indentation."""
         formatter = JsonFormatter(indent=4)
         output = formatter.format(sample_changelog)
-        
+
         # 4-space indent should be present
         assert "    " in output
 
@@ -183,7 +187,7 @@ class TestJsonFormatter:
         """Test formatting without metadata."""
         formatter = JsonFormatter(include_metadata=False)
         output = formatter.format(sample_changelog)
-        
+
         data = json.loads(output)
         assert "metadata" not in data
 
@@ -191,7 +195,7 @@ class TestJsonFormatter:
         """Test that generated_at timestamp is included."""
         formatter = JsonFormatter()
         output = formatter.format(sample_changelog)
-        
+
         data = json.loads(output)
         assert "generated_at" in data
 
@@ -203,7 +207,7 @@ class TestHtmlFormatter:
         """Test that output is valid HTML."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "<!DOCTYPE html>" in output
         assert "<html" in output
         assert "</html>" in output
@@ -212,14 +216,14 @@ class TestHtmlFormatter:
         """Test that title is in HTML."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "Test Changelog" in output
 
     def test_format_includes_styles(self, sample_changelog):
         """Test that styles are included."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "<style>" in output
         assert "</style>" in output
 
@@ -227,21 +231,21 @@ class TestHtmlFormatter:
         """Test breaking badge in HTML."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "BREAKING" in output or "badge-breaking" in output
 
     def test_format_includes_summary_table(self, sample_changelog):
         """Test summary table in HTML."""
         formatter = HtmlFormatter(include_summary=True)
         output = formatter.format(sample_changelog)
-        
+
         assert "<table" in output
 
     def test_format_without_summary(self, sample_changelog):
         """Test HTML without summary table."""
         formatter = HtmlFormatter(include_summary=False)
         output = formatter.format(sample_changelog)
-        
+
         # Table should still appear for changes, but not summary specifically
         # This test verifies the include_summary flag is respected
         assert "include_summary" not in output  # Template variable shouldn't leak
@@ -252,7 +256,7 @@ class TestHtmlFormatter:
         changelog = Changelog(title="<script>alert('xss')</script>")
         formatter = HtmlFormatter()
         output = formatter.format(changelog)
-        
+
         # Script tags should be escaped
         assert "<script>" not in output or "&lt;script&gt;" in output
 
@@ -260,7 +264,7 @@ class TestHtmlFormatter:
         """Test that footer is included."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "<footer>" in output
         assert "B\u00faho Zurdo" in output or "Buho Zurdo" in output
 
@@ -268,5 +272,5 @@ class TestHtmlFormatter:
         """Test that responsive viewport meta is included."""
         formatter = HtmlFormatter()
         output = formatter.format(sample_changelog)
-        
+
         assert "viewport" in output

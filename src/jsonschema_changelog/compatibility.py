@@ -6,14 +6,14 @@ backward and forward compatibility between schema versions.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from jsonschema_changelog.classifier import (
     ChangeCategory,
-    ClassificationResult,
     ChangeClassifier,
+    ClassificationResult,
 )
-from jsonschema_changelog.diff import DiffResult, SchemaDiff
+from jsonschema_changelog.diff import SchemaDiff
 
 
 class CompatibilityLevel(Enum):
@@ -114,6 +114,7 @@ class CompatibilityValidator:
         >>> if not result.is_backward_compatible:
         ...     for issue in result.issues:
         ...         print(issue.description)
+
     """
 
     def __init__(self, strict_mode: bool = False) -> None:
@@ -121,6 +122,7 @@ class CompatibilityValidator:
 
         Args:
             strict_mode: If True, treat ambiguous changes as incompatible
+
         """
         self.strict_mode = strict_mode
         self._differ = SchemaDiff()
@@ -143,6 +145,7 @@ class CompatibilityValidator:
 
         Returns:
             CompatibilityResult with compatibility level and issues
+
         """
         # Get the diff and classify changes
         diff_result = self._differ.compare(
@@ -200,6 +203,7 @@ class CompatibilityValidator:
 
         Returns:
             True if backward compatible
+
         """
         result = self.validate(old_schema, new_schema)
         return result.is_backward_compatible
@@ -217,6 +221,7 @@ class CompatibilityValidator:
 
         Returns:
             True if forward compatible
+
         """
         result = self.validate(old_schema, new_schema)
         return result.is_forward_compatible
@@ -265,9 +270,9 @@ class CompatibilityValidator:
             # For forward compatibility, we need to consider different rules
             # Adding optional fields breaks forward compatibility
             # because old schema won't know about them
-            
+
             change_type = change.change.change_type.value
-            
+
             # Property additions can break forward compatibility
             # if old schema has additionalProperties: false
             if change_type == "added" and self.strict_mode:
@@ -332,14 +337,10 @@ class CompatibilityValidator:
             )
 
         if issue_types.get("removed", 0) > 0:
-            suggestions.append(
-                "Mark fields as deprecated before removing them"
-            )
+            suggestions.append("Mark fields as deprecated before removing them")
 
         if issue_types.get("type_changed", 0) > 0:
-            suggestions.append(
-                "Consider using union types during transition period"
-            )
+            suggestions.append("Consider using union types during transition period")
 
         if issue_types.get("enum_removed", 0) > 0:
             suggestions.append(
@@ -347,7 +348,9 @@ class CompatibilityValidator:
             )
 
         # Add LIMS-specific suggestions
-        if any("patient" in i.path.lower() or "sample" in i.path.lower() for i in issues):
+        if any(
+            "patient" in i.path.lower() or "sample" in i.path.lower() for i in issues
+        ):
             suggestions.append(
                 "Critical: Changes affect patient/sample data. "
                 "Ensure compliance with data retention requirements."
@@ -370,6 +373,7 @@ def validate_compatibility(
 
     Returns:
         CompatibilityResult with compatibility information
+
     """
     validator = CompatibilityValidator(strict_mode=strict_mode)
     return validator.validate(old_schema, new_schema)

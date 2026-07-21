@@ -21,6 +21,7 @@ def load_schema(path: Union[str, Path]) -> Dict[str, Any]:
     Raises:
         FileNotFoundError: If the file doesn't exist
         ValueError: If the file format is not supported
+
     """
     path = Path(path)
 
@@ -47,6 +48,7 @@ def save_schema(schema: Dict[str, Any], path: Union[str, Path]) -> None:
     Args:
         schema: The schema to save
         path: Path to save the schema to
+
     """
     path = Path(path)
 
@@ -71,6 +73,7 @@ def extract_version(schema: Dict[str, Any]) -> str:
 
     Returns:
         Extracted version string or "unknown"
+
     """
     # Check $id for version
     schema_id = schema.get("$id", "")
@@ -106,6 +109,7 @@ def normalize_path(path: str) -> str:
 
     Returns:
         Normalized path
+
     """
     # Remove leading dots
     path = path.lstrip(".")
@@ -125,6 +129,7 @@ def get_nested_value(data: Dict[str, Any], path: str) -> Any:
 
     Returns:
         The value at the path, or None if not found
+
     """
     parts = path.split(".")
     current = data
@@ -145,6 +150,7 @@ def set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
         data: The dictionary to set value in
         path: Dot-separated path to the value
         value: The value to set
+
     """
     parts = path.split(".")
     current = data
@@ -166,15 +172,12 @@ def deep_merge(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         Merged dictionary
+
     """
     result = base.copy()
 
     for key, value in overlay.items():
-        if (
-            key in result
-            and isinstance(result[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = deep_merge(result[key], value)
         else:
             result[key] = value
@@ -190,6 +193,7 @@ def format_change_summary(changes: list) -> str:
 
     Returns:
         Formatted summary string
+
     """
     if not changes:
         return "No changes detected"

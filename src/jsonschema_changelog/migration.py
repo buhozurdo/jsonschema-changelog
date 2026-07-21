@@ -4,10 +4,9 @@ This module provides tools for generating and executing data migrations
 when schema changes occur.
 """
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional
 
 from jsonschema_changelog.classifier import ChangeCategory, ClassificationResult
 from jsonschema_changelog.diff import ChangeType, SchemaChange
@@ -164,34 +163,50 @@ class MigrationPlan:
             transform_type = step.params.get("transform", "identity")
             if transform_type == "to_string":
                 lines.append(f'    if "{path_key}" in result:')
-                lines.append(f'        result["{path_key}"] = str(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = str(result["{path_key}"])'
+                )
             elif transform_type == "to_integer":
                 lines.append(f'    if "{path_key}" in result:')
-                lines.append(f'        result["{path_key}"] = int(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = int(result["{path_key}"])'
+                )
             else:
                 lines.append(f"    # TODO: Implement custom transform for {path_key}")
-                lines.append(f'    # result["{path_key}"] = transform(result["{path_key}"])')
+                lines.append(
+                    f'    # result["{path_key}"] = transform(result["{path_key}"])'
+                )
 
         elif step.operation == MigrationType.CHANGE_TYPE:
             old_type = step.params.get("old_type", "any")
             new_type = step.params.get("new_type", "any")
-            lines.append(f'    # Type change: {old_type} -> {new_type}')
+            lines.append(f"    # Type change: {old_type} -> {new_type}")
             lines.append(f'    if "{path_key}" in result:')
             if new_type == "string":
-                lines.append(f'        result["{path_key}"] = str(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = str(result["{path_key}"])'
+                )
             elif new_type == "integer":
-                lines.append(f'        result["{path_key}"] = int(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = int(result["{path_key}"])'
+                )
             elif new_type == "number":
-                lines.append(f'        result["{path_key}"] = float(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = float(result["{path_key}"])'
+                )
             elif new_type == "boolean":
-                lines.append(f'        result["{path_key}"] = bool(result["{path_key}"])')
+                lines.append(
+                    f'        result["{path_key}"] = bool(result["{path_key}"])'
+                )
             else:
                 lines.append(f"        # TODO: Handle conversion to {new_type}")
                 lines.append("        pass")
 
         elif step.operation == MigrationType.SET_DEFAULT:
             default_value = step.params.get("default_value")
-            lines.append(f'    if "{path_key}" not in result or result["{path_key}"] is None:')
+            lines.append(
+                f'    if "{path_key}" not in result or result["{path_key}"] is None:'
+            )
             lines.append(f'        result["{path_key}"] = {repr(default_value)}')
 
         elif step.operation == MigrationType.CUSTOM:
@@ -254,11 +269,17 @@ class MigrationPlan:
             new_type = step.params.get("new_type", "any")
             lines.append(f'  if ("{path_key}" in result) {{')
             if new_type == "string":
-                lines.append(f'    result["{path_key}"] = String(result["{path_key}"]);')
+                lines.append(
+                    f'    result["{path_key}"] = String(result["{path_key}"]);'
+                )
             elif new_type in ("integer", "number"):
-                lines.append(f'    result["{path_key}"] = Number(result["{path_key}"]);')
+                lines.append(
+                    f'    result["{path_key}"] = Number(result["{path_key}"]);'
+                )
             elif new_type == "boolean":
-                lines.append(f'    result["{path_key}"] = Boolean(result["{path_key}"]);')
+                lines.append(
+                    f'    result["{path_key}"] = Boolean(result["{path_key}"]);'
+                )
             else:
                 lines.append(f"    // TODO: Handle conversion to {new_type}")
             lines.append("  }")
@@ -279,6 +300,7 @@ class MigrationStrategy:
         >>> strategy = MigrationStrategy()
         >>> plan = strategy.generate(classification_result)
         >>> script = plan.to_script("python")
+
     """
 
     def __init__(self) -> None:
@@ -302,6 +324,7 @@ class MigrationStrategy:
 
         Returns:
             MigrationPlan with steps to migrate data
+
         """
         plan = MigrationPlan(
             source_version=classification_result.old_version,
@@ -319,7 +342,8 @@ class MigrationStrategy:
             # Add warnings for breaking changes
             if classified_change.category == ChangeCategory.BREAKING:
                 plan.add_warning(
-                    f"Breaking change at '{change.path}': {classified_change.impact_description}"
+                    f"Breaking change at '{change.path}': "
+                    f"{classified_change.impact_description}"
                 )
 
         return plan
@@ -337,9 +361,7 @@ class MigrationStrategy:
                     operation=MigrationType.ADD_FIELD,
                     path=change.path,
                     description=f"Add new field '{change.path}'",
-                    params={
-                        "default_value": self._get_default_value(change.new_value)
-                    },
+                    params={"default_value": self._get_default_value(change.new_value)},
                 )
             )
 
@@ -360,7 +382,10 @@ class MigrationStrategy:
                 MigrationStep(
                     operation=MigrationType.CHANGE_TYPE,
                     path=change.path,
-                    description=f"Convert type from '{change.old_value}' to '{change.new_value}'",
+                    description=(
+                        f"Convert type from '{change.old_value}' "
+                        f"to '{change.new_value}'"
+                    ),
                     params={
                         "old_type": change.old_value,
                         "new_type": change.new_value,
@@ -378,9 +403,7 @@ class MigrationStrategy:
                     operation=MigrationType.SET_DEFAULT,
                     path=change.path,
                     description=f"Ensure required field '{change.path}' has a value",
-                    params={
-                        "default_value": self._get_field_default(change)
-                    },
+                    params={"default_value": self._get_field_default(change)},
                 )
             )
 
@@ -421,7 +444,10 @@ class MigrationStrategy:
                     MigrationStep(
                         operation=MigrationType.CUSTOM,
                         path=change.path,
-                        description=f"Handle constraint change '{constraint}' at '{change.path}'",
+                        description=(
+                            f"Handle constraint change '{constraint}' "
+                            f"at '{change.path}'"
+                        ),
                         params={
                             "constraint": constraint,
                             "old_value": change.old_value,
@@ -481,9 +507,7 @@ class MigrationStrategy:
 
         return defaults.get(field_name)
 
-    def _is_type_conversion_reversible(
-        self, old_type: Any, new_type: Any
-    ) -> bool:
+    def _is_type_conversion_reversible(self, old_type: Any, new_type: Any) -> bool:
         """Check if a type conversion is reversible."""
         # Widening conversions are generally reversible
         reversible_pairs = {
@@ -508,6 +532,7 @@ class MigrationStrategy:
 
         Returns:
             Migrated data
+
         """
         result = data.copy()
 
@@ -595,8 +620,9 @@ class MigrationStrategy:
 
         Returns:
             True if migration produces valid data
+
         """
-        from jsonschema import validate, ValidationError
+        from jsonschema import ValidationError, validate
 
         try:
             migrated = self.execute(plan, data)

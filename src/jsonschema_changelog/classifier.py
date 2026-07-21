@@ -136,6 +136,7 @@ class ChangeClassifier:
         >>> classifier = ChangeClassifier()
         >>> result = classifier.classify(diff_result)
         >>> print(f"Breaking changes: {len(result.breaking_changes)}")
+
     """
 
     # Breaking change patterns
@@ -162,6 +163,7 @@ class ChangeClassifier:
 
         Args:
             strict_mode: If True, treat ambiguous changes as breaking
+
         """
         self.strict_mode = strict_mode
 
@@ -173,6 +175,7 @@ class ChangeClassifier:
 
         Returns:
             ClassificationResult with all classified changes
+
         """
         result = ClassificationResult(
             old_version=diff_result.old_version,
@@ -194,6 +197,7 @@ class ChangeClassifier:
 
         Returns:
             ClassifiedChange with category and severity
+
         """
         # Check for deprecation first
         if change.change_type == ChangeType.DEPRECATED:
@@ -457,10 +461,18 @@ class ChangeClassifier:
         if constraint.startswith("exclusive"):
             # Similar logic for exclusive constraints
             if "Min" in constraint:
-                if old_value is not None and new_value is not None and new_value > old_value:
+                if (
+                    old_value is not None
+                    and new_value is not None
+                    and new_value > old_value
+                ):
                     return self._create_breaking_change(change)
             elif "Max" in constraint:
-                if old_value is not None and new_value is not None and new_value < old_value:
+                if (
+                    old_value is not None
+                    and new_value is not None
+                    and new_value < old_value
+                ):
                     return self._create_breaking_change(change)
 
         # Default: treat as potentially breaking in strict mode
@@ -511,7 +523,7 @@ class ChangeClassifier:
         if old_pattern is None and new_pattern is not None:
             return self._create_breaking_change(
                 change,
-                impact=f"Pattern constraint added, existing data may not match",
+                impact="Pattern constraint added, existing data may not match",
                 severity=Severity.HIGH,
             )
 
@@ -599,6 +611,7 @@ def classify_changes(
 
     Returns:
         ClassificationResult with all classified changes
+
     """
     classifier = ChangeClassifier(strict_mode=strict_mode)
     return classifier.classify(diff_result)

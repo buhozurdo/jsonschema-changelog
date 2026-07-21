@@ -107,7 +107,7 @@ def main():
     # Step 4: Generate Python migration script
     print("Step 4: Generating Python migration script...")
     python_script = plan.to_script("python")
-    
+
     print("\n--- migrate.py ---")
     print(python_script[:1000])  # Show first 1000 chars
     if len(python_script) > 1000:
@@ -122,7 +122,7 @@ def main():
     # Step 5: Generate JavaScript migration script
     print("\nStep 5: Generating JavaScript migration script...")
     js_script = plan.to_script("javascript")
-    
+
     with open("migrate.js", "w") as f:
         f.write(js_script)
     print("✓ Saved migrate.js")
@@ -142,7 +142,7 @@ def main():
 
     # Step 7: Validate migrated data
     print("\nStep 7: Validating migrated data against v2 schema...")
-    from jsonschema import validate, ValidationError
+    from jsonschema import ValidationError, validate
 
     all_valid = True
     for i, record in enumerate(migrated_data):
