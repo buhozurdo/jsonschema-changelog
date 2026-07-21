@@ -1,14 +1,14 @@
 # jsonschema-changelog
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/raelcorrales/jsonschema-changelog/ci.yml?branch=main)](https://github.com/raelcorrales/jsonschema-changelog/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/raelcorrales/jsonschema-changelog)](https://codecov.io/gh/raelcorrales/jsonschema-changelog)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/buhozurdo/jsonschema-changelog/ci.yml?branch=main)](https://github.com/buhozurdo/jsonschema-changelog/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/buhozurdo/jsonschema-changelog)](https://codecov.io/gh/buhozurdo/jsonschema-changelog)
 [![PyPI version](https://img.shields.io/pypi/v/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
 [![Python versions](https://img.shields.io/pypi/pyversions/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Detect, document, and manage changes between JSON Schema versions.**
 
-Part of the [Búho Zurdo](https://github.com/raelcorrales) ecosystem 🦉
+Part of the [Búho Zurdo](https://github.com/buhozurdo) ecosystem 🦉
 
 ---
 
