@@ -2,8 +2,6 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/buhozurdo/jsonschema-changelog/ci.yml?branch=main)](https://github.com/buhozurdo/jsonschema-changelog/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/buhozurdo/jsonschema-changelog)](https://codecov.io/gh/buhozurdo/jsonschema-changelog)
-[![PyPI version](https://img.shields.io/pypi/v/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
-[![Python versions](https://img.shields.io/pypi/pyversions/jsonschema-changelog)](https://pypi.org/project/jsonschema-changelog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Detect, document, and manage changes between JSON Schema versions.**
