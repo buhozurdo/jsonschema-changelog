@@ -36,6 +36,12 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: buhozurdo/jsonschema-changelog
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       
       - name: Upload binaries to GitHub Release
         uses: softprops/action-gh-release@v2
