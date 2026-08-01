@@ -62,11 +62,11 @@ dev = [
 jsonschema-changelog = "jsonschema_changelog.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/raelcorrales/jsonschema-changelog"
-Documentation = "https://github.com/raelcorrales/jsonschema-changelog#readme"
-Repository = "https://github.com/raelcorrales/jsonschema-changelog.git"
-Issues = "https://github.com/raelcorrales/jsonschema-changelog/issues"
-Changelog = "https://github.com/raelcorrales/jsonschema-changelog/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/buhozurdo/jsonschema-changelog"
+Documentation = "https://github.com/buhozurdo/jsonschema-changelog#readme"
+Repository = "https://github.com/buhozurdo/jsonschema-changelog.git"
+Issues = "https://github.com/buhozurdo/jsonschema-changelog/issues"
+Changelog = "https://github.com/buhozurdo/jsonschema-changelog/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jsonschema_changelog"]
