@@ -69,14 +69,14 @@ Issues = "https://github.com/buhozurdo/jsonschema-changelog/issues"
 Changelog = "https://github.com/buhozurdo/jsonschema-changelog/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/jsonschema_changelog"]
+packages = ["jsonschema_changelog"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src",
-    "/tests",
-    "/README.md",
-    "/LICENSE",
+    "src",
+    "tests",
+    "README.md",
+    "LICENSE",
 ]
 
 [tool.black]
