@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from jinja2 import Template
+from jinja2 import Environment
+from markupsafe import Markup
 
 from jsonschema_changelog.changelog import Changelog
 from jsonschema_changelog.classifier import ChangeCategory
@@ -349,7 +350,8 @@ class HtmlFormatter:
             HTML formatted string
 
         """
-        template = Template(self.template)
+        env = Environment(autoescape=True)
+        template = env.from_string(self.template)
 
         return template.render(
             changelog=changelog,
@@ -409,7 +411,7 @@ class HtmlFormatter:
 
         html_parts.append("</div>")
 
-        return "\n".join(html_parts)
+        return Markup("\n".join(html_parts))
 
     def _escape(self, text: str) -> str:
         """Escape HTML special characters."""

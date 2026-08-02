@@ -99,9 +99,10 @@ def diff(
 
         _write_output(content, output)
 
-        # Exit with non-zero if changes found
+        # Exit with non-zero if changes found; don't print human summaries when JSON requested
         if result.has_changes:
-            click.echo(f"\n{result.change_count} change(s) detected", err=True)
+            if output_format != "json":
+                click.echo(f"\n{result.change_count} change(s) detected", err=True)
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -170,13 +171,14 @@ def changelog(
         _write_output(content, output)
 
         # Summary
-        summary = classification.summary
-        click.echo(
-            f"Generated changelog: {summary['breaking']} breaking, "
-            f"{summary['non_breaking']} non-breaking, "
-            f"{summary['deprecation']} deprecations",
-            err=True,
-        )
+        if output_format != "json":
+            summary = classification.summary
+            click.echo(
+                f"Generated changelog: {summary['breaking']} breaking, "
+                f"{summary['non_breaking']} non-breaking, "
+                f"{summary['deprecation']} deprecations",
+                err=True,
+            )
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -240,12 +242,15 @@ def validate(
 
         # Exit code based on compatibility
         if fail_on_breaking and not result.is_backward_compatible:
-            click.echo("\n❌ Backward compatibility broken", err=True)
+            if output_format != "json":
+                click.echo("\n❌ Backward compatibility broken", err=True)
             sys.exit(1)
         elif result.is_fully_compatible:
-            click.echo("\n✅ Schemas are fully compatible", err=True)
+            if output_format != "json":
+                click.echo("\n✅ Schemas are fully compatible", err=True)
         elif result.is_backward_compatible:
-            click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
+            if output_format != "json":
+                click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
