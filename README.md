@@ -28,12 +28,6 @@ Perfect for APIs, LIMS (Laboratory Information Management Systems), and any syst
 pip install jsonschema-changelog
 ```
 
-Or with development dependencies:
-
-```bash
-pip install jsonschema-changelog[dev]
-```
-
 ## 🚀 Quick Start
 
 ### Python API
@@ -333,30 +327,6 @@ if not result.is_backward_compatible:
         print(f"• {suggestion}")
 ```
 
-## 🛣️ Roadmap
-
-- [ ] JSON Schema Draft 2020-12 full support
-- [ ] Schema versioning with Git integration
-- [ ] Visual diff in HTML output
-- [ ] Migration validation with sample data
-- [ ] OpenAPI/Swagger schema support
-- [ ] AsyncAPI schema support
-- [ ] Database schema comparison
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-  <img src="https://img.freepik.com/premium-vector/letter-b-owl-mascot-esport-gaming-logo-design-owl-night-bird-illustration-bird-gamer-esport-logo_15602-2190.jpg" alt="Búho Zurdo" width="100">
-  <br>
-  Part of the <strong>Búho Zurdo</strong> ecosystem
-  <br>
-  <em>Building reliable software, one schema at a time</em>
-</p>
