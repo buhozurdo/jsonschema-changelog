@@ -100,7 +100,7 @@ def diff(
         _write_output(content, output)
 
         # Exit with non-zero if changes found
-        if result.has_changes:
+        if result.has_changes and output_format != "json":
             click.echo(f"\n{result.change_count} change(s) detected", err=True)
 
     except Exception as e:
@@ -169,14 +169,15 @@ def changelog(
 
         _write_output(content, output)
 
-        # Summary
-        summary = classification.summary
-        click.echo(
-            f"Generated changelog: {summary['breaking']} breaking, "
-            f"{summary['non_breaking']} non-breaking, "
-            f"{summary['deprecation']} deprecations",
-            err=True,
-        )
+        # Summary (only when not emitting machine-readable JSON)
+        if output_format != "json":
+            summary = classification.summary
+            click.echo(
+                f"Generated changelog: {summary['breaking']} breaking, "
+                f"{summary['non_breaking']} non-breaking, "
+                f"{summary['deprecation']} deprecations",
+                err=True,
+            )
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -238,14 +239,17 @@ def validate(
 
         _write_output(content, output)
 
-        # Exit code based on compatibility
+        # Exit code and human-readable messages (only when not JSON)
         if fail_on_breaking and not result.is_backward_compatible:
-            click.echo("\n❌ Backward compatibility broken", err=True)
+            if output_format != "json":
+                click.echo("\n❌ Backward compatibility broken", err=True)
             sys.exit(1)
         elif result.is_fully_compatible:
-            click.echo("\n✅ Schemas are fully compatible", err=True)
+            if output_format != "json":
+                click.echo("\n✅ Schemas are fully compatible", err=True)
         elif result.is_backward_compatible:
-            click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
+            if output_format != "json":
+                click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -399,7 +403,7 @@ def _format_diff_markdown(result: DiffResult) -> str:
     ]
 
     for change in result.changes:
-        lines.append(f"## {change.change_type.value.upper()}: `{change.path}`")
+        lines.append(f"## {change.change_type.value.UPPER()}: `{change.path}`")
         lines.append(f"{change.description}")
         if change.old_value is not None:
             lines.append(f"- **Old:** `{change.old_value}`")
@@ -415,7 +419,7 @@ def _format_compatibility_text(result: CompatibilityResult) -> str:
     lines = [
         f"Compatibility Check: {result.old_version} → {result.new_version}",
         "=" * 50,
-        f"Level: {result.level.value.upper()}",
+        f"Level: {result.level.value.UPPER()}",
         f"Backward Compatible: {'✅' if result.is_backward_compatible else '❌'}",
         f"Forward Compatible: {'✅' if result.is_forward_compatible else '❌'}",
     ]
@@ -423,7 +427,7 @@ def _format_compatibility_text(result: CompatibilityResult) -> str:
     if result.issues:
         lines.append(f"\nIssues ({result.issue_count}):")
         for issue in result.issues:
-            lines.append(f"  [{issue.severity.upper()}] {issue.path}")
+            lines.append(f"  [{issue.severity.UPPER()}] {issue.path}")
             lines.append(f"    {issue.description}")
             if issue.suggestion:
                 lines.append(f"    💡 {issue.suggestion}")
