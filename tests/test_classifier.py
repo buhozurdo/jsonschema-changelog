@@ -292,6 +292,60 @@ class TestChangeClassifier:
         assert result.summary["deprecation"] == 1
         assert result.summary["total"] == 4
 
+    def test_format_added_is_breaking(self):
+        """Adding a format constraint is breaking."""
+        change = SchemaChange(
+            path="properties.email",
+            change_type=ChangeType.FORMAT_CHANGED,
+            old_value=None,
+            new_value="email",
+        )
+        diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
+        classifier = ChangeClassifier()
+        result = classifier.classify(diff_result)
+        assert len(result.breaking_changes) == 1
+
+    def test_format_removed_is_non_breaking(self):
+        """Removing a format constraint is non-breaking."""
+        change = SchemaChange(
+            path="properties.email",
+            change_type=ChangeType.FORMAT_CHANGED,
+            old_value="email",
+            new_value=None,
+        )
+        diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
+        classifier = ChangeClassifier()
+        result = classifier.classify(diff_result)
+        assert len(result.non_breaking_changes) == 1
+
+    def test_minimum_added_is_breaking(self):
+        """Adding minimum constraint is breaking."""
+        change = SchemaChange(
+            path="properties.age",
+            change_type=ChangeType.CONSTRAINT_CHANGED,
+            old_value=None,
+            new_value=18,
+            metadata={"constraint": "minimum"},
+        )
+        diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
+        classifier = ChangeClassifier()
+        result = classifier.classify(diff_result)
+        assert len(result.breaking_changes) == 1
+
+    def test_minimum_removed_is_non_breaking(self):
+        """Removing minimum constraint is non-breaking."""
+        change = SchemaChange(
+            path="properties.age",
+            change_type=ChangeType.CONSTRAINT_CHANGED,
+            old_value=18,
+            new_value=None,
+            metadata={"constraint": "minimum"},
+        )
+        diff_result = DiffResult(old_version="1", new_version="2", changes=[change])
+        classifier = ChangeClassifier()
+        result = classifier.classify(diff_result)
+        assert len(result.non_breaking_changes) == 1
+
 
 class TestConvenienceFunctions:
     """Test convenience functions."""
