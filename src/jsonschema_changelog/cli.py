@@ -169,15 +169,14 @@ def changelog(
 
         _write_output(content, output)
 
-        # Summary (only when not emitting machine-readable JSON)
-        if output_format != "json":
-            summary = classification.summary
-            click.echo(
-                f"Generated changelog: {summary['breaking']} breaking, "
-                f"{summary['non_breaking']} non-breaking, "
-                f"{summary['deprecation']} deprecations",
-                err=True,
-            )
+        # Summary
+        summary = classification.summary
+        click.echo(
+            f"Generated changelog: {summary['breaking']} breaking, "
+            f"{summary['non_breaking']} non-breaking, "
+            f"{summary['deprecation']} deprecations",
+            err=True,
+        )
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
