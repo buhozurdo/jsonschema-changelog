@@ -96,6 +96,7 @@ warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-v --cov=src/jsonschema_changelog --cov-report=term-missing"
 
 [tool.coverage.run]
