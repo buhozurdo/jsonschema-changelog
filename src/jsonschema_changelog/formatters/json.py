@@ -113,6 +113,6 @@ class JsonFormatter:
 
     def _get_timestamp(self) -> str:
         """Get current ISO timestamp."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
-        return datetime.utcnow().isoformat() + "Z"
+        return datetime.now(timezone.utc).isoformat()
