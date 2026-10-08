@@ -289,6 +289,18 @@ class SchemaDiff:
         # Compare additionalProperties
         self._compare_additional_properties(old_schema, new_schema, path, result)
 
+        # Compare unevaluatedProperties
+        self._compare_unevaluated_properties(old_schema, new_schema, path, result)
+
+        # Compare unevaluatedItems
+        self._compare_unevaluated_items(old_schema, new_schema, path, result)
+
+        # Compare dependentRequired
+        self._compare_dependent_required(old_schema, new_schema, path, result)
+
+        # Compare conditional subschemas (if/then/else)
+        self._compare_conditional_subschemas(old_schema, new_schema, path, result)
+
         # Compare definitions/$defs
         self._compare_definitions(old_schema, new_schema, path, result)
 
@@ -613,6 +625,156 @@ class SchemaDiff:
                     description=f"Changed additionalProperties at '{add_path}'",
                 )
             )
+
+    def _compare_unevaluated_properties(
+        self,
+        old_schema: Dict[str, Any],
+        new_schema: Dict[str, Any],
+        path: str,
+        result: DiffResult,
+    ) -> None:
+        """Compare unevaluatedProperties specifications."""
+        old_val = old_schema.get("unevaluatedProperties")
+        new_val = new_schema.get("unevaluatedProperties")
+
+        if old_val == new_val:
+            return
+
+        if old_val is None and new_val is None:
+            return
+
+        u_path = f"{path}.unevaluatedProperties" if path else "unevaluatedProperties"
+
+        if isinstance(old_val, dict) and isinstance(new_val, dict):
+            self._compare_schemas(old_val, new_val, u_path, result)
+        else:
+            result.changes.append(
+                SchemaChange(
+                    path=u_path,
+                    change_type=ChangeType.MODIFIED,
+                    old_value=old_val,
+                    new_value=new_val,
+                    description=f"Changed unevaluatedProperties at '{u_path}'",
+                )
+            )
+
+    def _compare_unevaluated_items(
+        self,
+        old_schema: Dict[str, Any],
+        new_schema: Dict[str, Any],
+        path: str,
+        result: DiffResult,
+    ) -> None:
+        """Compare unevaluatedItems specifications."""
+        old_val = old_schema.get("unevaluatedItems")
+        new_val = new_schema.get("unevaluatedItems")
+
+        if old_val == new_val:
+            return
+
+        if old_val is None and new_val is None:
+            return
+
+        u_path = f"{path}.unevaluatedItems" if path else "unevaluatedItems"
+
+        if isinstance(old_val, dict) and isinstance(new_val, dict):
+            self._compare_schemas(old_val, new_val, u_path, result)
+        else:
+            result.changes.append(
+                SchemaChange(
+                    path=u_path,
+                    change_type=ChangeType.MODIFIED,
+                    old_value=old_val,
+                    new_value=new_val,
+                    description=f"Changed unevaluatedItems at '{u_path}'",
+                )
+            )
+
+    def _compare_dependent_required(
+        self,
+        old_schema: Dict[str, Any],
+        new_schema: Dict[str, Any],
+        path: str,
+        result: DiffResult,
+    ) -> None:
+        """Compare dependentRequired specifications."""
+        old_deps = old_schema.get("dependentRequired", {})
+        new_deps = new_schema.get("dependentRequired", {})
+
+        old_keys = set(old_deps.keys())
+        new_keys = set(new_deps.keys())
+
+        # Added dependencies
+        for key in new_keys - old_keys:
+            dep_path = f"{path}.dependentRequired.{key}" if path else f"dependentRequired.{key}"
+            result.changes.append(
+                SchemaChange(
+                    path=dep_path,
+                    change_type=ChangeType.MODIFIED,
+                    old_value=None,
+                    new_value=new_deps[key],
+                    description=f"Added dependentRequired for '{key}'",
+                )
+            )
+
+        # Removed dependencies
+        for key in old_keys - new_keys:
+            dep_path = f"{path}.dependentRequired.{key}" if path else f"dependentRequired.{key}"
+            result.changes.append(
+                SchemaChange(
+                    path=dep_path,
+                    change_type=ChangeType.MODIFIED,
+                    old_value=old_deps[key],
+                    new_value=None,
+                    description=f"Removed dependentRequired for '{key}'",
+                )
+            )
+
+        # Modified dependencies
+        for key in old_keys & new_keys:
+            old_req = set(old_deps[key])
+            new_req = set(new_deps[key])
+            if old_req != new_req:
+                dep_path = f"{path}.dependentRequired.{key}" if path else f"dependentRequired.{key}"
+                result.changes.append(
+                    SchemaChange(
+                        path=dep_path,
+                        change_type=ChangeType.MODIFIED,
+                        old_value=old_deps[key],
+                        new_value=new_deps[key],
+                        description=f"Modified dependentRequired for '{key}'",
+                    )
+                )
+
+    def _compare_conditional_subschemas(
+        self,
+        old_schema: Dict[str, Any],
+        new_schema: Dict[str, Any],
+        path: str,
+        result: DiffResult,
+    ) -> None:
+        """Compare conditional subschemas (if, then, else)."""
+        for kw in ["if", "then", "else"]:
+            old_cond = old_schema.get(kw)
+            new_cond = new_schema.get(kw)
+            
+            if old_cond == new_cond:
+                continue
+                
+            cond_path = f"{path}.{kw}" if path else kw
+            
+            if isinstance(old_cond, dict) and isinstance(new_cond, dict):
+                self._compare_schemas(old_cond, new_cond, cond_path, result)
+            else:
+                result.changes.append(
+                    SchemaChange(
+                        path=cond_path,
+                        change_type=ChangeType.MODIFIED,
+                        old_value=old_cond,
+                        new_value=new_cond,
+                        description=f"Changed conditional subschema '{kw}'",
+                    )
+                )
 
     def _compare_definitions(
         self,

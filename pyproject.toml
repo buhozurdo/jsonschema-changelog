@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jsonschema-changelog"
-version = "0.1.5"
+version = "0.2.0"
 description = "Detect, document, and manage changes between JSON Schema versions"
 readme = "README.md"
 license = "MIT"

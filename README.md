@@ -1,41 +1,54 @@
 # jsonschema-changelog
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/buhozurdo/jsonschema-changelog/python-publish.yml?branch=main)](https://github.com/buhozurdo/jsonschema-changelog/actions)
+[![CI](https://github.com/buhozurdo/jsonschema-changelog/actions/workflows/ci.yml/badge.svg)](https://github.com/buhozurdo/jsonschema-changelog/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/github/buhozurdo/jsonschema-changelog/graph/badge.svg?token=JYIM9AKYJC)](https://codecov.io/github/buhozurdo/jsonschema-changelog)
+[![PyPI version](https://img.shields.io/pypi/v/jsonschema-changelog.svg)](https://pypi.org/project/jsonschema-changelog/)
+[![Python versions](https://img.shields.io/pypi/pyversions/jsonschema-changelog.svg)](https://pypi.org/project/jsonschema-changelog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Detect, document, and manage changes between JSON Schema versions.**
+Detect, document, and manage changes between JSON Schema versions.
 
 Part of the [Búho Zurdo](https://github.com/buhozurdo) ecosystem 🦉
 
 ---
 
-## 🎯 Overview
+## Overview
 
-`jsonschema-changelog` is a powerful tool for managing JSON Schema evolution in production systems. It helps you:
+`jsonschema-changelog` provides deterministic semantic comparison, classification, and changelog generation for JSON Schema specifications.
 
-- **Detect** all changes between schema versions (properties, types, constraints, etc.)
-- **Classify** changes as breaking, non-breaking, or deprecations
-- **Generate** changelogs in Markdown, JSON, or HTML formats
-- **Validate** backward and forward compatibility
-- **Create** migration scripts for data transformation
+- **Detect** differences between schema revisions (properties, types, constraints, enums, conditional subschemas `if/then/else`, `dependentRequired`, and dynamic keywords like `unevaluatedProperties`).
+- **Classify** changes by operational impact (breaking, non-breaking, deprecations).
+- **Generate** human-readable and machine-parseable changelogs (Markdown, JSON, HTML).
+- **Validate** backward and forward schema compatibility in CI/CD pipelines.
+- **Generate** deterministic data migration scripts.
 
-Perfect for APIs, LIMS (Laboratory Information Management Systems), and any system where data schemas evolve over time.
+Designed for data governance in schema-driven architectures, APIs, and clinical/laboratory management systems (LIMS).
 
-## 📦 Installation
+---
+
+## Installation
 
 ```bash
 pip install jsonschema-changelog
 ```
 
-## 🚀 Quick Start
+For development:
+
+```bash
+git clone https://github.com/buhozurdo/jsonschema-changelog.git
+cd jsonschema-changelog
+pip install -e ".[dev]"
+```
+
+---
+
+## Quick Start
 
 ### Python API
 
 ```python
 from jsonschema_changelog import SchemaDiff, ChangeClassifier, ChangelogGenerator
 
-# Define your schemas
 old_schema = {
     "type": "object",
     "properties": {
@@ -50,18 +63,16 @@ new_schema = {
     "properties": {
         "name": {"type": "string"},
         "status": {"type": "string", "enum": ["active", "inactive", "pending"]},
-        "email": {"type": "string", "format": "email"}  # New field
+        "email": {"type": "string", "format": "email"}
     },
     "required": ["name"]
 }
 
-# Detect changes
+# 1. Detect differences
 differ = SchemaDiff(old_version="1.0.0", new_version="2.0.0")
 diff_result = differ.compare(old_schema, new_schema)
 
-print(f"Found {diff_result.change_count} changes")
-
-# Classify changes
+# 2. Classify impact
 classifier = ChangeClassifier()
 classification = classifier.classify(diff_result)
 
@@ -69,182 +80,51 @@ print(f"Breaking: {len(classification.breaking_changes)}")
 print(f"Non-breaking: {len(classification.non_breaking_changes)}")
 print(f"Compatible: {classification.is_compatible}")
 
-# Generate changelog
+# 3. Generate changelog
 generator = ChangelogGenerator(title="API Schema Changelog")
 changelog = generator.generate(classification)
 markdown = generator.to_markdown(changelog)
 print(markdown)
 ```
 
-### Command Line
+### Command Line Interface
 
 ```bash
-# Compare two schemas
+# Compare schemas
 jsonschema-changelog diff old.json new.json
 
 # Generate changelog
 jsonschema-changelog changelog old.json new.json --format markdown -o CHANGELOG.md
 
-# Validate compatibility (fails on breaking changes)
+# Validate compatibility (fails with exit code 1 on breaking changes)
 jsonschema-changelog validate old.json new.json --fail-on-breaking
 
-# Generate migration script
+# Generate data migration script
 jsonschema-changelog migrate old.json new.json --language python -o migrate.py
 
-# Show schema information
+# Inspect schema details
 jsonschema-changelog info schema.json
 ```
 
-## 📋 Types of Changes Detected
+---
 
-### Properties
-- ➕ Added properties
-- ➖ Removed properties
-- 🔄 Modified properties (type, constraints, etc.)
+## Change Classification Matrix
 
-### Required Fields
-- 🔒 Fields becoming required
-- 🔓 Fields becoming optional
+| Impact | Description | Examples |
+|---|---|---|
+| **🚨 Breaking** | Incompatible contract change | Property removed, field made required, enum value removed, constraint narrowed (`minimum` increased). |
+| **✨ Non-Breaking** | Backward-compatible addition | Optional property added, required field made optional, enum value added, constraint relaxed. |
+| **⚠️ Deprecation** | Marked for future removal | Field annotated with `deprecated: true` or notice in description. |
+| **📝 Documentation** | Metadata update | Changes to `title`, `description`, or `examples` without structural impact. |
 
-### Types
-- 📝 Type changes (string → integer, etc.)
-- 📋 Type unions (adding/removing types)
+---
 
-### Constraints
-- 📏 Length constraints (minLength, maxLength)
-- 🔢 Numeric constraints (minimum, maximum)
-- 📊 Array constraints (minItems, maxItems)
+## CI/CD Integration
 
-### Enums
-- ✅ Added enum values
-- ❌ Removed enum values
-
-### Other
-- 📄 Format changes (email, date-time, etc.)
-- 🔤 Pattern changes (regex)
-- 📚 $ref changes
-- ⚠️ Deprecations
-- 📝 Documentation changes
-
-## 🏷️ Change Classification
-
-Changes are automatically classified by their impact:
-
-### 🚨 Breaking Changes
-- Removing a property
-- Making a field required
-- Reducing enum values
-- Making constraints stricter (higher minLength, lower maximum)
-- Changing type to a narrower type
-
-### ✨ Non-Breaking Changes
-- Adding optional properties
-- Making a field optional
-- Adding enum values
-- Relaxing constraints
-- Adding nullable to types
-
-### ⚠️ Deprecations
-- Marking fields as deprecated
-- Adding deprecation notices in descriptions
-
-### 📝 Documentation Changes
-- Title/description updates
-- Example changes
-
-## 🔧 API Reference
-
-### SchemaDiff
-
-```python
-from jsonschema_changelog import SchemaDiff
-
-differ = SchemaDiff(
-    old_version="1.0.0",
-    new_version="2.0.0",
-    include_documentation=True  # Include title/description changes
-)
-
-result = differ.compare(old_schema, new_schema)
-
-# Access changes
-for change in result.changes:
-    print(f"{change.change_type}: {change.path}")
-    print(f"  {change.description}")
-```
-
-### ChangeClassifier
-
-```python
-from jsonschema_changelog import ChangeClassifier
-
-classifier = ChangeClassifier(strict_mode=False)
-classification = classifier.classify(diff_result)
-
-# Access classified changes
-for change in classification.breaking_changes:
-    print(f"🚨 {change.impact_description}")
-    print(f"   Migration: {change.migration_hint}")
-```
-
-### ChangelogGenerator
-
-```python
-from jsonschema_changelog import ChangelogGenerator
-
-generator = ChangelogGenerator(
-    title="My API Changelog",
-    description="Track schema changes",
-    include_documentation=False
-)
-
-changelog = generator.generate(classification, date="2024-01-15")
-
-# Multiple formats
-markdown = generator.to_markdown(changelog)
-json_output = generator.to_json(changelog)
-html = generator.to_html(changelog)
-```
-
-### CompatibilityValidator
-
-```python
-from jsonschema_changelog import CompatibilityValidator
-
-validator = CompatibilityValidator(strict_mode=False)
-result = validator.validate(old_schema, new_schema)
-
-print(f"Level: {result.level}")  # FULL, BACKWARD, FORWARD, or NONE
-print(f"Backward compatible: {result.is_backward_compatible}")
-print(f"Forward compatible: {result.is_forward_compatible}")
-
-for issue in result.issues:
-    print(f"Issue: {issue.description}")
-    print(f"Suggestion: {issue.suggestion}")
-```
-
-### MigrationStrategy
-
-```python
-from jsonschema_changelog.migration import MigrationStrategy
-
-strategy = MigrationStrategy()
-plan = strategy.generate(classification)
-
-# Generate migration scripts
-python_script = plan.to_script("python")
-js_script = plan.to_script("javascript")
-
-# Execute migration on data
-migrated_data = strategy.execute(plan, original_data)
-```
-
-## 🔄 CI/CD Integration
-
-### GitHub Actions
+### GitHub Actions (Fail PR on Breaking Changes)
 
 ```yaml
-name: Schema Validation
+name: Schema Compatibility Check
 
 on:
   pull_request:
@@ -256,8 +136,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -268,21 +146,20 @@ jobs:
       - name: Validate schema compatibility
         run: |
           jsonschema-changelog validate \
-            schemas/schema_v1.json \
-            schemas/schema_v2.json \
+            schemas/current.json \
+            schemas/proposed.json \
             --fail-on-breaking
 
       - name: Generate changelog
         if: always()
         run: |
           jsonschema-changelog changelog \
-            schemas/schema_v1.json \
-            schemas/schema_v2.json \
+            schemas/current.json \
+            schemas/proposed.json \
             --format markdown \
-            --output SCHEMA_CHANGELOG.md
+            -o SCHEMA_CHANGELOG.md
 
-      - name: Upload changelog
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: schema-changelog
           path: SCHEMA_CHANGELOG.md
@@ -291,42 +168,49 @@ jobs:
 ### Pre-commit Hook
 
 ```yaml
-# .pre-commit-config.yaml
 repos:
   - repo: local
     hooks:
       - id: schema-compatibility
-        name: Check Schema Compatibility
+        name: Validate Schema Compatibility
         entry: jsonschema-changelog validate
         language: python
         files: \.json$
-        args: ['schemas/current.json', 'schemas/proposed.json']
+        args: ['schemas/current.json', 'schemas/proposed.json', '--fail-on-breaking']
 ```
 
-## 🏥 LIMS Use Case
+---
 
-This tool was designed with Laboratory Information Management Systems in mind:
+## Known Limitations
 
-```python
-# Validate that patient data schema changes don't break existing records
-from jsonschema_changelog import CompatibilityValidator
+- **Recursive Schemas:** Self-referential `$ref` definitions beyond 10 levels of nesting are truncated to avoid recursion exhaustion.
+- **Draft 2020-12 & OpenAPI 3.1 Support:** The library provides broad support for modern JSON Schema keywords (including `unevaluatedProperties`, `unevaluatedItems`, `dependentRequired`, and `if/then/else`). However, highly complex dynamic cross-references or niche schema compositions might still fall back to structural diffs.
 
-validator = CompatibilityValidator()
-result = validator.validate(
-    old_schema=patient_schema_v1,
-    new_schema=patient_schema_v2,
-    old_version="1.0.0",
-    new_version="2.0.0"
-)
+---
 
-if not result.is_backward_compatible:
-    print("⚠️ Breaking changes detected!")
-    print("Existing patient records may be affected.")
-    
-    for suggestion in result.suggestions:
-        print(f"• {suggestion}")
+## Testing
+
+```bash
+# Run test suite
+pytest
+
+# Run tests with coverage
+pytest --cov=src/jsonschema_changelog --cov-report=term-missing
 ```
 
-## 📄 License
+---
 
-MIT License - see [LICENSE](LICENSE) for details.
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and adhere to [Búho Zurdo Engineering Standards](https://github.com/buhozurdo).
+
+1. Fork repository.
+2. Create feature branch (`git checkout -b feat/schema-feature`).
+3. Add tests and verify formatting.
+4. Open Pull Request.
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.

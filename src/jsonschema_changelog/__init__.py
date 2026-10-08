@@ -16,7 +16,7 @@ from jsonschema_changelog.compatibility import CompatibilityValidator
 from jsonschema_changelog.diff import SchemaDiff
 from jsonschema_changelog.migration import MigrationStrategy
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Búho Zurdo"
 __email__ = "dev@buhozurdo.com"
 
