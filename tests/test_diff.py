@@ -283,3 +283,89 @@ class TestSchemaChange:
         data = change.to_dict()
         assert data["path"] == "test"
         assert data["change_type"] == "added"
+
+class TestDraft202012Diff:
+    """Test Draft 2020-12 and OpenAPI 3.1 specific features."""
+
+    def test_unevaluated_properties(self):
+        from jsonschema_changelog.diff import SchemaDiff, ChangeType
+        differ = SchemaDiff()
+        
+        old_schema = {}
+        new_schema = {"unevaluatedProperties": False}
+        result = differ.compare(old_schema, new_schema)
+        assert len(result.changes) == 1
+        assert result.changes[0].change_type == ChangeType.MODIFIED
+        assert result.changes[0].path == "unevaluatedProperties"
+        assert result.changes[0].new_value is False
+        
+        old_schema = {"unevaluatedProperties": {"type": "string"}}
+        new_schema = {"unevaluatedProperties": {"type": "integer"}}
+        result = differ.compare(old_schema, new_schema)
+        assert len(result.changes) == 1
+        assert result.changes[0].change_type == ChangeType.TYPE_CHANGED
+
+    def test_unevaluated_items(self):
+        from jsonschema_changelog.diff import SchemaDiff, ChangeType
+        differ = SchemaDiff()
+        
+        old_schema = {"unevaluatedItems": False}
+        new_schema = {}
+        result = differ.compare(old_schema, new_schema)
+        assert len(result.changes) == 1
+        assert result.changes[0].change_type == ChangeType.MODIFIED
+        assert result.changes[0].old_value is False
+        
+        old_schema = {"unevaluatedItems": {"type": "string"}}
+        new_schema = {"unevaluatedItems": {"type": "integer"}}
+        result = differ.compare(old_schema, new_schema)
+        assert len(result.changes) == 1
+        assert result.changes[0].change_type == ChangeType.TYPE_CHANGED
+
+    def test_dependent_required(self):
+        from jsonschema_changelog.diff import SchemaDiff, ChangeType
+        differ = SchemaDiff()
+        
+        old_schema = {
+            "dependentRequired": {
+                "foo": ["bar"]
+            }
+        }
+        new_schema = {
+            "dependentRequired": {
+                "foo": ["bar", "baz"],
+                "qux": ["quux"]
+            }
+        }
+        result = differ.compare(old_schema, new_schema)
+        
+        assert len(result.changes) == 2
+        paths = [c.path for c in result.changes]
+        assert "dependentRequired.foo" in paths
+        assert "dependentRequired.qux" in paths
+        
+        result2 = differ.compare(new_schema, old_schema)
+        assert len(result2.changes) == 2
+        paths2 = [c.path for c in result2.changes]
+        assert "dependentRequired.foo" in paths2
+        assert "dependentRequired.qux" in paths2
+        
+    def test_conditional_subschemas(self):
+        from jsonschema_changelog.diff import SchemaDiff, ChangeType
+        differ = SchemaDiff()
+        
+        old_schema = {
+            "if": {"properties": {"foo": {"type": "string"}}},
+            "then": {"required": ["bar"]}
+        }
+        new_schema = {
+            "if": {"properties": {"foo": {"type": "integer"}}},
+            "then": {"required": ["bar", "baz"]},
+            "else": {"required": ["qux"]}
+        }
+        result = differ.compare(old_schema, new_schema)
+        
+        paths = [c.path for c in result.changes]
+        assert "if.properties.foo" in paths
+        assert "then.baz" in paths
+        assert "else" in paths
