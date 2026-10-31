@@ -244,12 +244,10 @@ def validate(
             if output_format != "json":
                 click.echo("\n❌ Backward compatibility broken", err=True)
             sys.exit(1)
-        elif result.is_fully_compatible:
-            if output_format != "json":
-                click.echo("\n✅ Schemas are fully compatible", err=True)
-        elif result.is_backward_compatible:
-            if output_format != "json":
-                click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
+        elif result.is_fully_compatible and output_format != "json":
+            click.echo("\n✅ Schemas are fully compatible", err=True)
+        elif result.is_backward_compatible and output_format != "json":
+            click.echo("\n⚠️ Backward compatible, but not forward compatible", err=True)
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

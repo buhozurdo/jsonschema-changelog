@@ -410,6 +410,39 @@ class SchemaDiff:
                 )
             )
 
+    def _compare_enum_values(
+        self,
+        old_enum: List[Any],
+        new_enum: List[Any],
+        target_path: str,
+        result: DiffResult,
+    ) -> None:
+        """Compare enum values between two existing enum lists."""
+        old_set = {str(v) for v in old_enum}
+        new_set = {str(v) for v in new_enum}
+
+        # Added enum values
+        added = new_set - old_set
+        if added:
+            result.changes.append(
+                SchemaChange(
+                    path=target_path,
+                    change_type=ChangeType.ENUM_ADDED,
+                    new_value=list(added),
+                )
+            )
+
+        # Removed enum values
+        removed = old_set - new_set
+        if removed:
+            result.changes.append(
+                SchemaChange(
+                    path=target_path,
+                    change_type=ChangeType.ENUM_REMOVED,
+                    old_value=list(removed),
+                )
+            )
+
     def _compare_enum(
         self,
         old_schema: Dict[str, Any],
@@ -424,51 +457,29 @@ class SchemaDiff:
         if old_enum is None and new_enum is None:
             return
 
+        target_path = path or "root"
         if old_enum is not None and new_enum is not None:
-            old_set = set(str(v) for v in old_enum)
-            new_set = set(str(v) for v in new_enum)
-
-            # Added enum values
-            added = new_set - old_set
-            if added:
-                result.changes.append(
-                    SchemaChange(
-                        path=path or "root",
-                        change_type=ChangeType.ENUM_ADDED,
-                        new_value=list(added),
-                    )
-                )
-
-            # Removed enum values
-            removed = old_set - new_set
-            if removed:
-                result.changes.append(
-                    SchemaChange(
-                        path=path or "root",
-                        change_type=ChangeType.ENUM_REMOVED,
-                        old_value=list(removed),
-                    )
-                )
+            self._compare_enum_values(old_enum, new_enum, target_path, result)
         elif old_enum is not None:
             # Enum removed entirely
             result.changes.append(
                 SchemaChange(
-                    path=path or "root",
+                    path=target_path,
                     change_type=ChangeType.MODIFIED,
                     old_value={"enum": old_enum},
                     new_value=None,
-                    description=f"Removed enum constraint at '{path or 'root'}'",
+                    description=f"Removed enum constraint at '{target_path}'",
                 )
             )
         else:
             # Enum added
             result.changes.append(
                 SchemaChange(
-                    path=path or "root",
+                    path=target_path,
                     change_type=ChangeType.MODIFIED,
                     old_value=None,
                     new_value={"enum": new_enum},
-                    description=f"Added enum constraint at '{path or 'root'}'",
+                    description=f"Added enum constraint at '{target_path}'",
                 )
             )
 

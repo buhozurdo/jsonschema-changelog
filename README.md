@@ -181,6 +181,18 @@ repos:
 
 ---
 
+## Alternatives & Competitors
+
+| Solution | Core Approach | Best Use Case | Comparison to `jsonschema-changelog` |
+| :--- | :--- | :--- | :--- |
+| **`jsonschema-changelog`** | **Semantic Diff & Changelogs** | **Data Governance, CI/CD, Raw Schemas** | **(Baseline)** Lightweight, OpenAPI-agnostic, generates human-readable changelogs/migrations, and robustly handles Draft 2020-12. |
+| **`jsonschema-diff`** | Semantic JSON Diff | Simple schema type checks | **Pros:** Minimalist approach to diffing.<br>**Cons:** Lacks changelog/migration generation and robust support for modern dynamic keywords. |
+| **`oasdiff`** | OpenAPI Contract Review | HTTP REST APIs | **Pros:** Deeply integrated with OpenAPI semantics (paths, endpoints).<br>**Cons:** Tied to OpenAPI; unsuitable for raw JSON Schemas (e.g. Kafka, NoSQL, LIMS). |
+| **Optic** | Managed API Evolution | Enterprise API Platforms | **Pros:** Powerful GUI, history tracking, and platform features.<br>**Cons:** Heavy, commercial vendor lock-in, overkill for agile CI pipelines. |
+| **Schema.biz** | Breaking Change Detector | SemVer API Lifecycle | **Pros:** Excellent alignment with Semantic Versioning guarantees.<br>**Cons:** Platform-oriented, less flexible than a fully local open-source Python library. |
+
+---
+
 ## Known Limitations
 
 - **Recursive Schemas:** Self-referential `$ref` definitions beyond 10 levels of nesting are truncated to avoid recursion exhaustion.
@@ -197,6 +209,12 @@ pytest
 # Run tests with coverage
 pytest --cov=src/jsonschema_changelog --cov-report=term-missing
 ```
+
+---
+
+## Roadmap
+
+Curious about what's next? Check out our [ROADMAP.md](ROADMAP.md) for upcoming features like automated SemVer suggestions, Git history tracking, and interactive UIs.
 
 ---
 

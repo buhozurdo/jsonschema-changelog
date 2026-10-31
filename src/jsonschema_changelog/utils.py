@@ -1,13 +1,22 @@
-"""Utility functions for jsonschema-changelog."""
+from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 import yaml
 
 
-def load_schema(path: Union[str, Path]) -> Dict[str, Any]:
+def _extract_semver(text: str) -> str | None:
+    """Extract semantic version string from text without super-linear backtracking."""
+    match = re.search(r"v(\d+\.\d+\.\d+)\b", text) or re.search(
+        r"\b(\d+\.\d+\.\d+)\b", text
+    )
+    return match.group(1) if match else None
+
+
+def load_schema(path: str | Path) -> dict[str, Any]:
     """Load a JSON Schema from a file.
 
     Supports both JSON and YAML formats.
@@ -42,7 +51,7 @@ def load_schema(path: Union[str, Path]) -> Dict[str, Any]:
             return yaml.safe_load(content)
 
 
-def save_schema(schema: Dict[str, Any], path: Union[str, Path]) -> None:
+def save_schema(schema: dict[str, Any], path: str | Path) -> None:
     """Save a JSON Schema to a file.
 
     Args:
@@ -60,7 +69,7 @@ def save_schema(schema: Dict[str, Any], path: Union[str, Path]) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def extract_version(schema: Dict[str, Any]) -> str:
+def extract_version(schema: dict[str, Any]) -> str:
     """Extract version from a schema.
 
     Looks for version in common locations:
@@ -78,12 +87,9 @@ def extract_version(schema: Dict[str, Any]) -> str:
     # Check $id for version
     schema_id = schema.get("$id", "")
     if schema_id:
-        # Look for version pattern in ID
-        import re
-
-        version_match = re.search(r"v?(\d+\.\d+\.\d+)", schema_id)
-        if version_match:
-            return version_match.group(1)
+        version = _extract_semver(schema_id)
+        if version:
+            return version
 
     # Check version property
     if "version" in schema:
@@ -92,11 +98,9 @@ def extract_version(schema: Dict[str, Any]) -> str:
     # Check title
     title = schema.get("title", "")
     if title:
-        import re
-
-        version_match = re.search(r"v?(\d+\.\d+\.\d+)", title)
-        if version_match:
-            return version_match.group(1)
+        version = _extract_semver(title)
+        if version:
+            return version
 
     return "unknown"
 
@@ -120,7 +124,7 @@ def normalize_path(path: str) -> str:
     return path
 
 
-def get_nested_value(data: Dict[str, Any], path: str) -> Any:
+def get_nested_value(data: dict[str, Any], path: str) -> Any:
     """Get a nested value from a dictionary.
 
     Args:
@@ -143,7 +147,7 @@ def get_nested_value(data: Dict[str, Any], path: str) -> Any:
     return current
 
 
-def set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
+def set_nested_value(data: dict[str, Any], path: str, value: Any) -> None:
     """Set a nested value in a dictionary.
 
     Args:
@@ -163,7 +167,7 @@ def set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
     current[parts[-1]] = value
 
 
-def deep_merge(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
+def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
     """Deep merge two dictionaries.
 
     Args:
@@ -199,7 +203,7 @@ def format_change_summary(changes: list) -> str:
         return "No changes detected"
 
     # Count by type
-    type_counts: Dict[str, int] = {}
+    type_counts: dict[str, int] = {}
     for change in changes:
         change_type = getattr(change, "change_type", "unknown")
         if hasattr(change_type, "value"):

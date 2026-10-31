@@ -385,95 +385,123 @@ class ChangeClassifier:
             severity=Severity.CRITICAL,
         )
 
+    def _classify_increasing_constraint(
+        self,
+        change: SchemaChange,
+        constraint: str,
+        old_value: Any,
+        new_value: Any,
+    ) -> ClassifiedChange:
+        """Classify constraints that are breaking when increased (e.g. minLength)."""
+        if old_value is not None and new_value is not None:
+            if new_value > old_value:
+                return self._create_breaking_change(
+                    change,
+                    impact=(
+                        f"Minimum constraint '{constraint}' "
+                        f"increased from {old_value} to {new_value}"
+                    ),
+                    severity=Severity.HIGH,
+                )
+            return self._create_non_breaking_change(
+                change,
+                impact=(
+                    f"Minimum constraint '{constraint}' "
+                    f"decreased from {old_value} to {new_value}"
+                ),
+                severity=Severity.LOW,
+            )
+        elif old_value is None and new_value is not None:
+            return self._create_breaking_change(
+                change,
+                impact=f"Added minimum constraint '{constraint}' = {new_value}",
+                severity=Severity.HIGH,
+            )
+        return self._create_non_breaking_change(
+            change,
+            impact=f"Removed minimum constraint '{constraint}'",
+            severity=Severity.LOW,
+        )
+
+    def _classify_decreasing_constraint(
+        self,
+        change: SchemaChange,
+        constraint: str,
+        old_value: Any,
+        new_value: Any,
+    ) -> ClassifiedChange:
+        """Classify constraints that are breaking when decreased (e.g. maxLength)."""
+        if old_value is not None and new_value is not None:
+            if new_value < old_value:
+                return self._create_breaking_change(
+                    change,
+                    impact=(
+                        f"Maximum constraint '{constraint}' "
+                        f"decreased from {old_value} to {new_value}"
+                    ),
+                    severity=Severity.HIGH,
+                )
+            return self._create_non_breaking_change(
+                change,
+                impact=(
+                    f"Maximum constraint '{constraint}' "
+                    f"increased from {old_value} to {new_value}"
+                ),
+                severity=Severity.LOW,
+            )
+        elif old_value is None and new_value is not None:
+            return self._create_breaking_change(
+                change,
+                impact=f"Added maximum constraint '{constraint}' = {new_value}",
+                severity=Severity.HIGH,
+            )
+        return self._create_non_breaking_change(
+            change,
+            impact=f"Removed maximum constraint '{constraint}'",
+            severity=Severity.LOW,
+        )
+
+    def _classify_exclusive_constraint(
+        self,
+        change: SchemaChange,
+        constraint: str,
+        old_value: Any,
+        new_value: Any,
+    ) -> Optional[ClassifiedChange]:
+        """Classify exclusiveMin/exclusiveMax constraint changes."""
+        if old_value is None or new_value is None:
+            return None
+        if "Min" in constraint and new_value > old_value:
+            return self._create_breaking_change(change)
+        if "Max" in constraint and new_value < old_value:
+            return self._create_breaking_change(change)
+        return None
+
     def _classify_constraint_change(self, change: SchemaChange) -> ClassifiedChange:
-        """Classify a constraint change based on whether it's more or less restrictive."""
+        """Classify constraint changes by whether they are more or less restrictive."""
         constraint = change.metadata.get("constraint", "")
         old_value = change.old_value
         new_value = change.new_value
 
-        # Constraints that are breaking when increased
         increasing_constraints = {"minLength", "minItems", "minProperties", "minimum"}
-
-        # Constraints that are breaking when decreased
         decreasing_constraints = {"maxLength", "maxItems", "maxProperties", "maximum"}
 
         if constraint in increasing_constraints:
-            # Making minimum constraints higher is breaking
-            if old_value is not None and new_value is not None:
-                if new_value > old_value:
-                    return self._create_breaking_change(
-                        change,
-                        impact=f"Minimum constraint '{constraint}' increased from {old_value} to {new_value}",
-                        severity=Severity.HIGH,
-                    )
-                else:
-                    return self._create_non_breaking_change(
-                        change,
-                        impact=f"Minimum constraint '{constraint}' decreased from {old_value} to {new_value}",
-                        severity=Severity.LOW,
-                    )
-            elif old_value is None and new_value is not None:
-                # Adding a minimum constraint
-                return self._create_breaking_change(
-                    change,
-                    impact=f"Added minimum constraint '{constraint}' = {new_value}",
-                    severity=Severity.HIGH,
-                )
-            else:
-                # Removing a minimum constraint
-                return self._create_non_breaking_change(
-                    change,
-                    impact=f"Removed minimum constraint '{constraint}'",
-                    severity=Severity.LOW,
-                )
+            return self._classify_increasing_constraint(
+                change, constraint, old_value, new_value
+            )
 
         if constraint in decreasing_constraints:
-            # Making maximum constraints lower is breaking
-            if old_value is not None and new_value is not None:
-                if new_value < old_value:
-                    return self._create_breaking_change(
-                        change,
-                        impact=f"Maximum constraint '{constraint}' decreased from {old_value} to {new_value}",
-                        severity=Severity.HIGH,
-                    )
-                else:
-                    return self._create_non_breaking_change(
-                        change,
-                        impact=f"Maximum constraint '{constraint}' increased from {old_value} to {new_value}",
-                        severity=Severity.LOW,
-                    )
-            elif old_value is None and new_value is not None:
-                # Adding a maximum constraint
-                return self._create_breaking_change(
-                    change,
-                    impact=f"Added maximum constraint '{constraint}' = {new_value}",
-                    severity=Severity.HIGH,
-                )
-            else:
-                # Removing a maximum constraint
-                return self._create_non_breaking_change(
-                    change,
-                    impact=f"Removed maximum constraint '{constraint}'",
-                    severity=Severity.LOW,
-                )
+            return self._classify_decreasing_constraint(
+                change, constraint, old_value, new_value
+            )
 
-        # Exclusive constraints
         if constraint.startswith("exclusive"):
-            # Similar logic for exclusive constraints
-            if "Min" in constraint:
-                if (
-                    old_value is not None
-                    and new_value is not None
-                    and new_value > old_value
-                ):
-                    return self._create_breaking_change(change)
-            elif "Max" in constraint:
-                if (
-                    old_value is not None
-                    and new_value is not None
-                    and new_value < old_value
-                ):
-                    return self._create_breaking_change(change)
+            exclusive_result = self._classify_exclusive_constraint(
+                change, constraint, old_value, new_value
+            )
+            if exclusive_result is not None:
+                return exclusive_result
 
         # Default: treat as potentially breaking in strict mode
         if self.strict_mode:

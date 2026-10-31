@@ -94,13 +94,13 @@ class MarkdownFormatter:
         version_header = f"## [{entry.version}]"
         if entry.is_breaking:
             version_header += " 🚨 BREAKING CHANGES"
-        lines.append(version_header)
-        lines.append("")
-
-        # Metadata
-        lines.append(f"**Date:** {entry.date}")
-        lines.append(f"**Previous Version:** {entry.previous_version}")
-        lines.append("")
+        lines.extend([
+            version_header,
+            "",
+            f"**Date:** {entry.date}",
+            f"**Previous Version:** {entry.previous_version}",
+            "",
+        ])
 
         # Summary
         if self.include_summary:

@@ -120,24 +120,67 @@ class MigrationPlan:
             lines.extend(self._generate_python_step(step))
             lines.append("")
 
-        lines.append("    return result")
-        lines.append("")
-        lines.append("")
-        lines.append('if __name__ == "__main__":')
-        lines.append("    import json")
-        lines.append("    import sys")
-        lines.append("")
-        lines.append("    if len(sys.argv) < 2:")
-        lines.append('        print("Usage: python migrate.py <input.json>")')
-        lines.append("        sys.exit(1)")
-        lines.append("")
-        lines.append('    with open(sys.argv[1], "r") as f:')
-        lines.append("        data = json.load(f)")
-        lines.append("")
-        lines.append("    migrated = migrate(data)")
-        lines.append("    print(json.dumps(migrated, indent=2))")
+        lines.extend([
+            "    return result",
+            "",
+            "",
+            'if __name__ == "__main__":',
+            "    import json",
+            "    import sys",
+            "",
+            "    if len(sys.argv) < 2:",
+            '        print("Usage: python migrate.py <input.json>")',
+            "        sys.exit(1)",
+            "",
+            '    with open(sys.argv[1], "r") as f:',
+            "        data = json.load(f)",
+            "",
+            "    migrated = migrate(data)",
+            "    print(json.dumps(migrated, indent=2))",
+        ])
 
         return "\n".join(lines)
+
+    def _python_transform_value(self, path_key: str, step: MigrationStep) -> List[str]:
+        """Generate Python code for a transform value step."""
+        transform_type = step.params.get("transform", "identity")
+        if transform_type == "to_string":
+            return [
+                f'    if "{path_key}" in result:',
+                f'        result["{path_key}"] = str(result["{path_key}"])',
+            ]
+        elif transform_type == "to_integer":
+            return [
+                f'    if "{path_key}" in result:',
+                f'        result["{path_key}"] = int(result["{path_key}"])',
+            ]
+        return [
+            f"    # TODO: Implement custom transform for {path_key}",
+            f'    # result["{path_key}"] = transform(result["{path_key}"])',
+        ]
+
+    def _python_change_type(self, path_key: str, step: MigrationStep) -> List[str]:
+        """Generate Python code for a change type step."""
+        old_type = step.params.get("old_type", "any")
+        new_type = step.params.get("new_type", "any")
+        lines = [
+            f"    # Type change: {old_type} -> {new_type}",
+            f'    if "{path_key}" in result:',
+        ]
+        if new_type == "string":
+            lines.append(f'        result["{path_key}"] = str(result["{path_key}"])')
+        elif new_type == "integer":
+            lines.append(f'        result["{path_key}"] = int(result["{path_key}"])')
+        elif new_type == "number":
+            lines.append(f'        result["{path_key}"] = float(result["{path_key}"])')
+        elif new_type == "boolean":
+            lines.append(f'        result["{path_key}"] = bool(result["{path_key}"])')
+        else:
+            lines.extend([
+                f"        # TODO: Handle conversion to {new_type}",
+                "        pass",
+            ])
+        return lines
 
     def _generate_python_step(self, step: MigrationStep) -> List[str]:
         """Generate Python code for a migration step."""
@@ -147,72 +190,43 @@ class MigrationPlan:
 
         if step.operation == MigrationType.ADD_FIELD:
             default_value = step.params.get("default_value", "None")
-            lines.append(f'    if "{path_key}" not in result:')
-            lines.append(f'        result["{path_key}"] = {repr(default_value)}')
+            lines.extend([
+                f'    if "{path_key}" not in result:',
+                f'        result["{path_key}"] = {repr(default_value)}',
+            ])
 
         elif step.operation == MigrationType.REMOVE_FIELD:
-            lines.append(f'    if "{path_key}" in result:')
-            lines.append(f'        del result["{path_key}"]')
+            lines.extend([
+                f'    if "{path_key}" in result:',
+                f'        del result["{path_key}"]',
+            ])
 
         elif step.operation == MigrationType.RENAME_FIELD:
             new_name = step.params.get("new_name", f"{path_key}_new")
-            lines.append(f'    if "{path_key}" in result:')
-            lines.append(f'        result["{new_name}"] = result.pop("{path_key}")')
+            lines.extend([
+                f'    if "{path_key}" in result:',
+                f'        result["{new_name}"] = result.pop("{path_key}")',
+            ])
 
         elif step.operation == MigrationType.TRANSFORM_VALUE:
-            transform_type = step.params.get("transform", "identity")
-            if transform_type == "to_string":
-                lines.append(f'    if "{path_key}" in result:')
-                lines.append(
-                    f'        result["{path_key}"] = str(result["{path_key}"])'
-                )
-            elif transform_type == "to_integer":
-                lines.append(f'    if "{path_key}" in result:')
-                lines.append(
-                    f'        result["{path_key}"] = int(result["{path_key}"])'
-                )
-            else:
-                lines.append(f"    # TODO: Implement custom transform for {path_key}")
-                lines.append(
-                    f'    # result["{path_key}"] = transform(result["{path_key}"])'
-                )
+            lines.extend(self._python_transform_value(path_key, step))
 
         elif step.operation == MigrationType.CHANGE_TYPE:
-            old_type = step.params.get("old_type", "any")
-            new_type = step.params.get("new_type", "any")
-            lines.append(f"    # Type change: {old_type} -> {new_type}")
-            lines.append(f'    if "{path_key}" in result:')
-            if new_type == "string":
-                lines.append(
-                    f'        result["{path_key}"] = str(result["{path_key}"])'
-                )
-            elif new_type == "integer":
-                lines.append(
-                    f'        result["{path_key}"] = int(result["{path_key}"])'
-                )
-            elif new_type == "number":
-                lines.append(
-                    f'        result["{path_key}"] = float(result["{path_key}"])'
-                )
-            elif new_type == "boolean":
-                lines.append(
-                    f'        result["{path_key}"] = bool(result["{path_key}"])'
-                )
-            else:
-                lines.append(f"        # TODO: Handle conversion to {new_type}")
-                lines.append("        pass")
+            lines.extend(self._python_change_type(path_key, step))
 
         elif step.operation == MigrationType.SET_DEFAULT:
             default_value = step.params.get("default_value")
-            lines.append(
-                f'    if "{path_key}" not in result or result["{path_key}"] is None:'
-            )
-            lines.append(f'        result["{path_key}"] = {repr(default_value)}')
+            lines.extend([
+                f'    if "{path_key}" not in result or result["{path_key}"] is None:',
+                f'        result["{path_key}"] = {repr(default_value)}',
+            ])
 
         elif step.operation == MigrationType.CUSTOM:
-            lines.append(f"    # Custom migration for {step.path}")
-            lines.append("    # TODO: Implement custom migration logic")
-            lines.append("    pass")
+            lines.extend([
+                f"    # Custom migration for {step.path}",
+                "    # TODO: Implement custom migration logic",
+                "    pass",
+            ])
 
         return lines
 
@@ -235,10 +249,12 @@ class MigrationPlan:
             lines.extend(self._generate_javascript_step(step))
             lines.append("")
 
-        lines.append("  return result;")
-        lines.append("}")
-        lines.append("")
-        lines.append("module.exports = { migrate };")
+        lines.extend([
+            "  return result;",
+            "}",
+            "",
+            "module.exports = { migrate };",
+        ])
 
         return "\n".join(lines)
 
@@ -251,19 +267,23 @@ class MigrationPlan:
         if step.operation == MigrationType.ADD_FIELD:
             default_value = step.params.get("default_value", "null")
             js_value = "null" if default_value is None else repr(default_value)
-            lines.append(f'  if (result["{path_key}"] === undefined) {{')
-            lines.append(f'    result["{path_key}"] = {js_value};')
-            lines.append("  }")
+            lines.extend([
+                f'  if (result["{path_key}"] === undefined) {{',
+                f'    result["{path_key}"] = {js_value};',
+                "  }",
+            ])
 
         elif step.operation == MigrationType.REMOVE_FIELD:
             lines.append(f'  delete result["{path_key}"];')
 
         elif step.operation == MigrationType.RENAME_FIELD:
             new_name = step.params.get("new_name", f"{path_key}_new")
-            lines.append(f'  if ("{path_key}" in result) {{')
-            lines.append(f'    result["{new_name}"] = result["{path_key}"];')
-            lines.append(f'    delete result["{path_key}"];')
-            lines.append("  }")
+            lines.extend([
+                f'  if ("{path_key}" in result) {{',
+                f'    result["{new_name}"] = result["{path_key}"];',
+                f'    delete result["{path_key}"];',
+                "  }",
+            ])
 
         elif step.operation == MigrationType.CHANGE_TYPE:
             new_type = step.params.get("new_type", "any")
@@ -541,6 +561,24 @@ class MigrationStrategy:
 
         return result
 
+    @staticmethod
+    def _resolve_path_key(path: str) -> str:
+        """Extract path key handling nested property paths."""
+        if ".properties." in path:
+            parts = path.split(".properties.")
+            return parts[-1].split(".")[0]
+        path_parts = path.split(".")
+        return path_parts[-1] if path_parts else path
+
+    def _apply_transform_value(self, step: MigrationStep, value: Any) -> Any:
+        """Apply transformer function for TRANSFORM_VALUE step."""
+        transformer_name = step.params.get("transform")
+        if transformer_name in self._transformers:
+            return self._transformers[transformer_name](value)
+        if step.transformer:
+            return step.transformer(value)
+        return value
+
     def _execute_step(
         self,
         step: MigrationStep,
@@ -548,14 +586,7 @@ class MigrationStrategy:
     ) -> Dict[str, Any]:
         """Execute a single migration step."""
         result = data.copy()
-        path_parts = step.path.split(".")
-        path_key = path_parts[-1] if path_parts else step.path
-
-        # Handle nested paths (simplified - only handles root level)
-        if ".properties." in step.path:
-            # Extract the property name from paths like "properties.name"
-            parts = step.path.split(".properties.")
-            path_key = parts[-1].split(".")[0]
+        path_key = self._resolve_path_key(step.path)
 
         if step.operation == MigrationType.ADD_FIELD:
             if path_key not in result:
@@ -581,13 +612,7 @@ class MigrationStrategy:
 
         elif step.operation == MigrationType.TRANSFORM_VALUE:
             if path_key in result:
-                transformer_name = step.params.get("transform")
-                if transformer_name in self._transformers:
-                    result[path_key] = self._transformers[transformer_name](
-                        result[path_key]
-                    )
-                elif step.transformer:
-                    result[path_key] = step.transformer(result[path_key])
+                result[path_key] = self._apply_transform_value(step, result[path_key])
 
         return result
 

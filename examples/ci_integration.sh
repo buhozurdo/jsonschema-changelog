@@ -14,6 +14,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+SEPARATOR="-------------------------------------------"
 
 echo "============================================="
 echo "JSON Schema Change Validation"
@@ -21,8 +22,8 @@ echo "============================================="
 echo ""
 
 # Check arguments
-if [ $# -lt 2 ]; then
-    echo "Usage: $0 <old_schema.json> <new_schema.json>"
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 <old_schema.json> <new_schema.json>" >&2
     exit 1
 fi
 
@@ -30,13 +31,13 @@ OLD_SCHEMA=$1
 NEW_SCHEMA=$2
 
 # Verify files exist
-if [ ! -f "$OLD_SCHEMA" ]; then
-    echo -e "${RED}Error: Old schema file not found: $OLD_SCHEMA${NC}"
+if [[ ! -f "$OLD_SCHEMA" ]]; then
+    echo -e "${RED}Error: Old schema file not found: $OLD_SCHEMA${NC}" >&2
     exit 1
 fi
 
-if [ ! -f "$NEW_SCHEMA" ]; then
-    echo -e "${RED}Error: New schema file not found: $NEW_SCHEMA${NC}"
+if [[ ! -f "$NEW_SCHEMA" ]]; then
+    echo -e "${RED}Error: New schema file not found: $NEW_SCHEMA${NC}" >&2
     exit 1
 fi
 
@@ -47,13 +48,13 @@ echo ""
 
 # Step 1: Show diff summary
 echo "Step 1: Detecting changes..."
-echo "-------------------------------------------"
+echo "$SEPARATOR"
 jsonschema-changelog diff "$OLD_SCHEMA" "$NEW_SCHEMA" --format text 2>&1 || true
 echo ""
 
 # Step 2: Validate compatibility
 echo "Step 2: Validating backward compatibility..."
-echo "-------------------------------------------"
+echo "$SEPARATOR"
 
 if jsonschema-changelog validate "$OLD_SCHEMA" "$NEW_SCHEMA" --fail-on-breaking 2>&1; then
     echo -e "${GREEN}✅ Schema changes are backward compatible${NC}"
@@ -66,7 +67,7 @@ echo ""
 
 # Step 3: Generate changelog
 echo "Step 3: Generating changelog..."
-echo "-------------------------------------------"
+echo "$SEPARATOR"
 jsonschema-changelog changelog "$OLD_SCHEMA" "$NEW_SCHEMA" \
     --format markdown \
     --title "Schema Changes" \
@@ -76,9 +77,9 @@ echo "Changelog saved to SCHEMA_CHANGELOG.md"
 echo ""
 
 # Step 4: Generate migration script (if breaking changes)
-if [ "$COMPATIBLE" = false ]; then
+if [[ "$COMPATIBLE" = false ]]; then
     echo "Step 4: Generating migration script..."
-    echo "-------------------------------------------"
+    echo "$SEPARATOR"
     jsonschema-changelog migrate "$OLD_SCHEMA" "$NEW_SCHEMA" \
         --language python \
         --output migrate_schema.py 2>&1 || true
@@ -90,7 +91,7 @@ fi
 
 # Step 5: Export JSON report for CI artifacts
 echo "Step 5: Generating JSON report..."
-echo "-------------------------------------------"
+echo "$SEPARATOR"
 jsonschema-changelog validate "$OLD_SCHEMA" "$NEW_SCHEMA" \
     --format json \
     --no-fail-on-breaking \
@@ -103,7 +104,7 @@ echo ""
 echo "============================================="
 echo "Summary"
 echo "============================================="
-if [ "$COMPATIBLE" = true ]; then
+if [[ "$COMPATIBLE" = true ]]; then
     echo -e "${GREEN}Schema update is safe to deploy!${NC}"
     echo ""
     echo "Generated files:"
